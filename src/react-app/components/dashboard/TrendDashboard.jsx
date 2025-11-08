@@ -59,12 +59,19 @@ export default function TrendDashboard() {
   };
 
   if (loading) {
-    return <div className="text-f1-text">Loading dashboard...</div>;
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-f1-text text-xl">Loading dashboard...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-f1-text">Cross-Circuit Analysis</h2>
+    <div className="max-w-7xl mx-auto space-y-8">
+      <div>
+        <h2 className="text-4xl font-bold text-f1-text mb-2">Cross-Circuit Analysis</h2>
+        <p className="text-gray-400">Performance metrics across all circuits and sessions</p>
+      </div>
 
       {aggregatedStats && Object.entries(aggregatedStats).map(([user, stats]) => (
         <div key={user} className="space-y-4">
