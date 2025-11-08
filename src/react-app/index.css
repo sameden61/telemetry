@@ -1,6 +1,21 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-f1-red: #E10600;
+  --color-f1-background: #000000;
+  --color-f1-panel: #0A0A0A;
+  --color-f1-card: #111111;
+  --color-f1-border: #1a1a1a;
+  --color-f1-text: #FFFFFF;
+  --color-f1-textGray: #8F8F8F;
+  --color-f1-accent: #00D9FF;
+  --color-f1-accentHover: #00B8E6;
+}
+
+body {
+  background-color: #000000;
+  color: #FFFFFF;
+}
 
 :root {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
@@ -24,11 +39,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #15151E;
+  background: #000000;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E1E2E;
+  background: #1a1a1a;
   border-radius: 5px;
 }
 

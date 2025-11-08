@@ -1,18 +1,45 @@
 import { useEffect, useRef } from 'react';
+// @ts-ignore - Plotly doesn't have TypeScript definitions
 import Plotly from 'plotly.js-dist-min';
+
+interface TelemetryDataPoint {
+  distance: number;
+  speed: number;
+  throttle: number;
+  brake: number;
+  gear: number;
+  rpm: number;
+  lateral_g: number;
+  longitudinal_g: number;
+  [key: string]: number | undefined;
+}
+
+interface Session {
+  sessionId: string;
+  userName: string;
+  lapTime: number;
+  data: TelemetryDataPoint[];
+}
+
+interface TelemetryChartProps {
+  sessions: Session[];
+  metric?: string;
+  showDelta?: boolean;
+  deltaType?: 'absolute' | 'percentage';
+}
 
 export default function TelemetryChart({
   sessions,
   metric = 'speed',
   showDelta = false,
-  deltaType = 'absolute' // 'absolute' or 'percentage'
-}) {
-  const plotRef = useRef(null);
+  deltaType = 'absolute'
+}: TelemetryChartProps) {
+  const plotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sessions || sessions.length === 0) return;
+    if (!sessions || sessions.length === 0 || !plotRef.current) return;
 
-    const traces = sessions.map((session, idx) => ({
+    const traces: any[] = sessions.map((session, idx) => ({
       x: session.data.map(d => d.distance),
       y: session.data.map(d => d[metric]),
       type: 'scatter',
@@ -31,27 +58,27 @@ export default function TelemetryChart({
     }
 
     const layout = {
-      paper_bgcolor: '#15151E',
-      plot_bgcolor: '#1E1E2E',
+      paper_bgcolor: '#000000',
+      plot_bgcolor: '#0A0A0A',
       font: { color: '#FFFFFF', family: 'Arial, sans-serif' },
       xaxis: {
         title: 'Distance (m)',
-        gridcolor: '#2A2A3E',
+        gridcolor: '#1a1a1a',
         showline: true,
-        linecolor: '#444'
+        linecolor: '#1a1a1a'
       },
       yaxis: {
         title: getMetricLabel(metric),
-        gridcolor: '#2A2A3E',
+        gridcolor: '#1a1a1a',
         showline: true,
-        linecolor: '#444'
+        linecolor: '#1a1a1a'
       },
       hovermode: 'x unified',
       legend: {
         x: 0.02,
         y: 0.98,
-        bgcolor: 'rgba(30, 30, 46, 0.8)',
-        bordercolor: '#444',
+        bgcolor: 'rgba(10, 10, 10, 0.8)',
+        bordercolor: '#1a1a1a',
         borderwidth: 1
       },
       margin: { t: 40, r: 40, b: 60, l: 60 }
@@ -77,7 +104,7 @@ export default function TelemetryChart({
   );
 }
 
-function calculateDelta(session1, session2, metric, deltaType) {
+function calculateDelta(session1: Session, session2: Session, metric: string, deltaType: 'absolute' | 'percentage') {
   // Interpolate to match distances
   const distances = session1.data.map(d => d.distance);
   const deltas = distances.map(dist => {
@@ -86,11 +113,16 @@ function calculateDelta(session1, session2, metric, deltaType) {
 
     if (!p1 || !p2) return null;
 
+    const val1 = p1[metric];
+    const val2 = p2[metric];
+
+    if (val1 === undefined || val2 === undefined) return null;
+
     if (deltaType === 'percentage') {
-      return ((p1[metric] - p2[metric]) / p2[metric]) * 100;
+      return ((val1 - val2) / val2) * 100;
     }
-    return p1[metric] - p2[metric];
-  }).filter(d => d !== null);
+    return val1 - val2;
+  }).filter(d => d !== null) as number[];
 
   return {
     x: distances,
@@ -107,8 +139,8 @@ function calculateDelta(session1, session2, metric, deltaType) {
   };
 }
 
-function getMetricLabel(metric) {
-  const labels = {
+function getMetricLabel(metric: string): string {
+  const labels: { [key: string]: string } = {
     speed: 'Speed (km/h)',
     throttle: 'Throttle (%)',
     brake: 'Brake Pressure (%)',

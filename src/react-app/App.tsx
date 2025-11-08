@@ -19,41 +19,39 @@ function AppContent() {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'Upload', icon: '📤' },
-    { path: '/compare', label: 'Compare', icon: '📊' },
-    { path: '/dashboard', label: 'Dashboard', icon: '📈' },
-    { path: '/mcp', label: 'AI Coach', icon: '🤖' },
+    { path: '/', label: 'Upload Telemetry' },
+    { path: '/compare', label: 'Compare Laps' },
+    { path: '/dashboard', label: 'Analytics' },
+    { path: '/mcp', label: 'AI Coach' },
   ];
 
   return (
     <div className="flex min-h-screen bg-f1-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-f1-panel border-r border-gray-800 flex flex-col">
+      <aside className="w-56 bg-f1-panel border-r border-f1-border flex flex-col">
         {/* Logo/Brand */}
-        <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold text-f1-text">
-            <span className="text-f1-accent">Telemetry</span>
-            <br />
-            <span className="text-f1-red">Compare</span>
+        <div className="p-6 border-b border-f1-border">
+          <h1 className="text-xl font-bold tracking-tight">
+            <span className="text-f1-red">F1</span>
+            <span className="text-f1-text"> TELEMETRY</span>
           </h1>
-          <p className="text-xs text-gray-400 mt-1">Sim Racing Analytics</p>
+          <p className="text-xs text-f1-textGray mt-2 uppercase tracking-wider">Analytics Suite</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
+        <nav className="flex-1 p-3 pt-6">
+          <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  className={`block px-4 py-3 text-sm font-medium transition-all uppercase tracking-wide ${
                     location.pathname === item.path
-                      ? 'bg-f1-accent text-gray-900 font-semibold'
-                      : 'text-f1-text hover:bg-gray-800 hover:text-f1-accent'
+                      ? 'bg-f1-red text-white'
+                      : 'text-f1-textGray hover:bg-f1-card hover:text-f1-accent'
                   }`}
                 >
-                  <span className="text-xl">{item.icon}</span>
-                  <span>{item.label}</span>
+                  {item.label}
                 </Link>
               </li>
             ))}
@@ -61,16 +59,16 @@ function AppContent() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-500 text-center">
-            Powered by Supabase & AI
+        <div className="p-4 border-t border-f1-border">
+          <p className="text-xs text-f1-textGray text-center tracking-wide">
+            POWERED BY SUPABASE
           </p>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="container mx-auto px-6 py-8 max-w-5xl">
           <Routes>
             <Route path="/" element={<UploadPage />} />
             <Route path="/compare" element={<ComparePage />} />

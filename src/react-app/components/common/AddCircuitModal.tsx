@@ -2,7 +2,25 @@ import { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import Modal from './Modal';
 
-export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
+interface Circuit {
+  id: string;
+  name: string;
+  display_name: string;
+  country: string;
+  corner_classifications: {
+    slow: { min: number; max: number };
+    medium: { min: number; max: number };
+    fast: { min: number; max: number };
+  };
+}
+
+interface AddCircuitModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCircuitAdded?: (circuit: Circuit) => void;
+}
+
+export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }: AddCircuitModalProps) {
   const [formData, setFormData] = useState({
     displayName: '',
     country: '',
@@ -13,9 +31,9 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
     fastMin: 150
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
@@ -50,9 +68,9 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
         mediumMax: 150,
         fastMin: 150
       });
-      onCircuitAdded && onCircuitAdded(data);
+      onCircuitAdded && onCircuitAdded(data as Circuit);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error adding circuit:', err);
       setError(err.message || 'Failed to add circuit');
     } finally {
@@ -78,13 +96,13 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
     <Modal isOpen={isOpen} onClose={handleClose} title="Add New Circuit">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-900 bg-opacity-50 border border-red-700 text-red-200 px-4 py-3 rounded">
+          <div className="bg-red-900 bg-opacity-50 border border-red-700 text-red-200 px-4 py-3">
             {error}
           </div>
         )}
 
         <div>
-          <label className="block text-f1-text font-medium mb-2">
+          <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">
             Circuit Name *
           </label>
           <input
@@ -92,14 +110,14 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
             value={formData.displayName}
             onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
             placeholder="e.g., Monza, Spa-Francorchamps"
-            className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+            className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
             required
             autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-f1-text font-medium mb-2">
+          <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">
             Country *
           </label>
           <input
@@ -107,33 +125,33 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
             value={formData.country}
             onChange={(e) => setFormData({ ...formData, country: e.target.value })}
             placeholder="e.g., Italy, Belgium"
-            className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+            className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
             required
           />
         </div>
 
-        <div className="border-t border-gray-700 pt-4">
-          <h4 className="text-f1-text font-semibold mb-3">Corner Speed Thresholds (km/h)</h4>
+        <div className="border-t border-f1-border pt-4">
+          <h4 className="text-f1-textGray text-xs font-semibold mb-3 uppercase tracking-wider">Corner Speed Thresholds (km/h)</h4>
 
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-green-400 mb-1">Slow Min</label>
+                <label className="block text-xs text-green-400 mb-1">Slow Min</label>
                 <input
                   type="number"
                   value={formData.slowMin}
                   onChange={(e) => setFormData({ ...formData, slowMin: parseInt(e.target.value) })}
-                  className="w-full bg-f1-background text-f1-text px-3 py-2 rounded border border-gray-700 focus:border-green-400 outline-none"
+                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-green-400 outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm text-green-400 mb-1">Slow Max</label>
+                <label className="block text-xs text-green-400 mb-1">Slow Max</label>
                 <input
                   type="number"
                   value={formData.slowMax}
                   onChange={(e) => setFormData({ ...formData, slowMax: parseInt(e.target.value) })}
-                  className="w-full bg-f1-background text-f1-text px-3 py-2 rounded border border-gray-700 focus:border-green-400 outline-none"
+                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-green-400 outline-none"
                   required
                 />
               </div>
@@ -141,37 +159,37 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-yellow-400 mb-1">Medium Min</label>
+                <label className="block text-xs text-yellow-400 mb-1">Medium Min</label>
                 <input
                   type="number"
                   value={formData.mediumMin}
                   onChange={(e) => setFormData({ ...formData, mediumMin: parseInt(e.target.value) })}
-                  className="w-full bg-f1-background text-f1-text px-3 py-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"
+                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-yellow-400 outline-none"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm text-yellow-400 mb-1">Medium Max</label>
+                <label className="block text-xs text-yellow-400 mb-1">Medium Max</label>
                 <input
                   type="number"
                   value={formData.mediumMax}
                   onChange={(e) => setFormData({ ...formData, mediumMax: parseInt(e.target.value) })}
-                  className="w-full bg-f1-background text-f1-text px-3 py-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"
+                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-yellow-400 outline-none"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-red-400 mb-1">Fast Min</label>
+              <label className="block text-xs text-red-400 mb-1">Fast Min</label>
               <input
                 type="number"
                 value={formData.fastMin}
                 onChange={(e) => setFormData({ ...formData, fastMin: parseInt(e.target.value) })}
-                className="w-full bg-f1-background text-f1-text px-3 py-2 rounded border border-gray-700 focus:border-red-400 outline-none"
+                className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-red-400 outline-none"
                 required
               />
-              <p className="text-xs text-gray-400 mt-1">Maximum is unlimited</p>
+              <p className="text-xs text-f1-textGray mt-1">Maximum is unlimited</p>
             </div>
           </div>
         </div>
@@ -180,14 +198,14 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }) {
           <button
             type="submit"
             disabled={isSubmitting || !formData.displayName.trim() || !formData.country.trim()}
-            className="flex-1 bg-f1-accent hover:bg-cyan-400 text-gray-900 font-semibold py-3 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-f1-red hover:bg-red-700 text-white font-semibold py-2 px-6 uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Adding...' : 'Add Circuit'}
           </button>
           <button
             type="button"
             onClick={handleClose}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="px-6 py-2 bg-f1-card hover:bg-f1-border text-f1-textGray hover:text-f1-text transition-colors uppercase tracking-wider"
           >
             Cancel
           </button>

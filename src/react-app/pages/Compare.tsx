@@ -3,19 +3,58 @@ import { supabase, getSessionsByCircuitAndCar, getTelemetryData, getAllCars } fr
 import TelemetryChart from '../components/charts/TelemetryChart';
 import ChartControls from '../components/charts/ChartControls';
 
+interface Circuit {
+  id: string;
+  name: string;
+  display_name: string;
+}
+
+interface Car {
+  id: string;
+  name: string;
+  display_name: string;
+}
+
+interface Session {
+  id: string;
+  lap_time: number;
+  session_date: string;
+  users: {
+    display_name: string;
+  };
+}
+
+interface TelemetryDataPoint {
+  distance: number;
+  speed: number;
+  throttle: number;
+  brake: number;
+  gear: number;
+  rpm: number;
+  lateral_g: number;
+  longitudinal_g: number;
+  [key: string]: number | undefined;
+}
+
+interface ChartSession {
+  sessionId: string;
+  userName: string;
+  lapTime: number;
+  data: TelemetryDataPoint[];
+}
+
 export default function ComparePage() {
-  const [circuits, setCircuits] = useState([]);
-  const [cars, setCars] = useState([]);
+  const [circuits, setCircuits] = useState<Circuit[]>([]);
+  const [cars, setCars] = useState<Car[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState('');
   const [selectedCar, setSelectedCar] = useState('');
-  const [sessions, setSessions] = useState([]);
-  const [selectedSessions, setSelectedSessions] = useState([]);
-  const [chartData, setChartData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+  const [chartData, setChartData] = useState<ChartSession[]>([]);
 
   const [metric, setMetric] = useState('speed');
   const [showDelta, setShowDelta] = useState(false);
-  const [deltaType, setDeltaType] = useState('absolute');
+  const [deltaType, setDeltaType] = useState<'absolute' | 'percentage'>('absolute');
 
   useEffect(() => {
     loadCircuitsAndCars();
@@ -28,21 +67,19 @@ export default function ComparePage() {
   }, [selectedCircuit, selectedCar]);
 
   const loadCircuitsAndCars = async () => {
-    const { data: circuitsData } = await supabase.from('circuits').select('*');
+    const circuitsResponse = await (supabase.from('circuits').select('*') as any);
     const carsData = await getAllCars();
-    setCircuits(circuitsData || []);
+    setCircuits(circuitsResponse.data || []);
     setCars(carsData || []);
   };
 
   const loadSessions = async () => {
-    setLoading(true);
     const data = await getSessionsByCircuitAndCar(selectedCircuit, selectedCar);
     setSessions(data);
     setSelectedSessions([]);
-    setLoading(false);
   };
 
-  const handleSessionSelect = (sessionId) => {
+  const handleSessionSelect = (sessionId: string) => {
     setSelectedSessions(prev => {
       if (prev.includes(sessionId)) {
         return prev.filter(id => id !== sessionId);
@@ -55,21 +92,19 @@ export default function ComparePage() {
   const loadComparisonData = async () => {
     if (selectedSessions.length === 0) return;
 
-    setLoading(true);
     const data = await Promise.all(
       selectedSessions.map(async (sessionId) => {
         const session = sessions.find(s => s.id === sessionId);
         const telemetry = await getTelemetryData(sessionId);
         return {
           sessionId,
-          userName: session.users.display_name,
-          lapTime: session.lap_time,
+          userName: session!.users.display_name,
+          lapTime: session!.lap_time,
           data: telemetry
         };
       })
     );
     setChartData(data);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -77,21 +112,21 @@ export default function ComparePage() {
   }, [selectedSessions]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-4xl font-bold text-f1-text mb-2">Compare Laps</h2>
-        <p className="text-gray-400">Analyze and compare telemetry data between sessions</p>
+    <div className="space-y-6">
+      <div className="border-b border-f1-border pb-4">
+        <h2 className="text-2xl font-bold text-f1-text uppercase tracking-wide">Compare Laps</h2>
+        <p className="text-f1-textGray text-sm mt-1">Analyze and compare telemetry data between sessions</p>
       </div>
 
-      <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
-        <h3 className="text-xl font-semibold text-f1-text mb-6">Select Track & Car</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-f1-panel p-6 border border-f1-border">
+        <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Select Track & Car</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-f1-text font-medium mb-2">Circuit</label>
+            <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">Circuit</label>
             <select
               value={selectedCircuit}
               onChange={(e) => setSelectedCircuit(e.target.value)}
-              className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+              className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
             >
               <option value="">Choose circuit...</option>
               {circuits.map(circuit => (
@@ -103,11 +138,11 @@ export default function ComparePage() {
           </div>
 
           <div>
-            <label className="block text-f1-text font-medium mb-2">Car</label>
+            <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">Car</label>
             <select
               value={selectedCar}
               onChange={(e) => setSelectedCar(e.target.value)}
-              className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+              className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
             >
               <option value="">Choose car...</option>
               {cars.map(car => (
@@ -121,18 +156,18 @@ export default function ComparePage() {
       </div>
 
       {sessions.length > 0 && (
-        <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
-          <h3 className="text-xl font-semibold text-f1-text mb-6">
-            Select Sessions <span className="text-gray-400 text-sm">(max 2)</span>
+        <div className="bg-f1-panel p-6 border border-f1-border">
+          <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">
+            Select Sessions <span className="text-xs">(max 2)</span>
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {sessions.map(session => (
               <label
                 key={session.id}
-                className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all border ${
+                className={`flex items-center gap-4 p-4 cursor-pointer transition-all border ${
                   selectedSessions.includes(session.id)
-                    ? 'bg-f1-accent bg-opacity-10 border-f1-accent'
-                    : 'bg-f1-background border-gray-700 hover:border-gray-600'
+                    ? 'bg-f1-card border-f1-red'
+                    : 'bg-f1-card border-f1-border hover:border-f1-textGray'
                 }`}
               >
                 <input
@@ -140,13 +175,13 @@ export default function ComparePage() {
                   checked={selectedSessions.includes(session.id)}
                   onChange={() => handleSessionSelect(session.id)}
                   disabled={selectedSessions.length >= 2 && !selectedSessions.includes(session.id)}
-                  className="w-5 h-5 accent-f1-accent"
+                  className="w-4 h-4 accent-f1-red"
                 />
                 <div className="flex-1 text-f1-text">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-bold text-lg">{session.users.display_name}</span>
-                    <span className="font-mono text-f1-accent text-xl">{session.lap_time.toFixed(3)}s</span>
-                    <span className="text-sm text-gray-400">
+                    <span className="font-bold">{session.users.display_name}</span>
+                    <span className="font-mono text-f1-accent text-lg">{session.lap_time.toFixed(3)}s</span>
+                    <span className="text-xs text-f1-textGray">
                       {new Date(session.session_date).toLocaleDateString()}
                     </span>
                   </div>
@@ -165,10 +200,10 @@ export default function ComparePage() {
             showDelta={showDelta}
             onDeltaToggle={setShowDelta}
             deltaType={deltaType}
-            onDeltaTypeChange={setDeltaType}
+            onDeltaTypeChange={(type) => setDeltaType(type as 'absolute' | 'percentage')}
           />
 
-          <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
+          <div className="bg-f1-panel p-6 border border-f1-border">
             <TelemetryChart
               sessions={chartData}
               metric={metric}
@@ -177,21 +212,21 @@ export default function ComparePage() {
             />
           </div>
 
-          <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
-            <h3 className="text-xl font-semibold text-f1-text mb-6">Lap Summary</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-f1-panel p-6 border border-f1-border">
+            <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Lap Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {chartData.map((session, idx) => (
-                <div key={session.sessionId} className="bg-f1-background p-6 rounded-lg border border-gray-700">
-                  <p className="text-gray-400 text-sm mb-1">Driver</p>
-                  <p className="font-bold text-2xl text-f1-text mb-3">{session.userName}</p>
-                  <p className="text-gray-400 text-sm mb-1">Lap Time</p>
-                  <p className="text-3xl font-mono text-f1-accent font-bold">
+                <div key={session.sessionId} className="bg-f1-card p-6 border border-f1-border">
+                  <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Driver</p>
+                  <p className="font-bold text-xl text-f1-text mb-4">{session.userName}</p>
+                  <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Lap Time</p>
+                  <p className="text-2xl font-mono text-f1-accent font-bold">
                     {session.lapTime.toFixed(3)}s
                   </p>
                   {chartData.length === 2 && idx === 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <p className="text-gray-400 text-sm mb-1">Delta</p>
-                      <p className={`text-xl font-mono font-bold ${
+                    <div className="mt-4 pt-4 border-t border-f1-border">
+                      <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Delta</p>
+                      <p className={`text-lg font-mono font-bold ${
                         chartData[0].lapTime < chartData[1].lapTime ? 'text-green-400' : 'text-red-400'
                       }`}>
                         {chartData[0].lapTime < chartData[1].lapTime ? '-' : '+'}

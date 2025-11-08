@@ -3,11 +3,24 @@ import { parseCSV, validateTelemetryData, calculateBestLap, normalizeTelemetryDa
 import { uploadTelemetrySession, uploadTelemetryData } from '../../lib/supabase';
 import { calculateCornerAnalysisForSession } from '../../lib/cornerClassifier';
 
-export default function CSVUploader({ userId, circuitId, carId, circuitThresholds }) {
+interface CornerThresholds {
+  slow: { min: number; max: number };
+  medium: { min: number; max: number };
+  fast: { min: number; max: number };
+}
+
+interface CSVUploaderProps {
+  userId: string;
+  circuitId: string;
+  carId: string;
+  circuitThresholds: CornerThresholds | null;
+}
+
+export default function CSVUploader({ userId, circuitId, carId, circuitThresholds }: CSVUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -47,7 +60,7 @@ export default function CSVUploader({ userId, circuitId, carId, circuitThreshold
 
       setStatus('Upload complete!');
       setTimeout(() => setStatus(''), 3000);
-    } catch (error) {
+    } catch (error: any) {
       setStatus(`Error: ${error.message}`);
       console.error(error);
     } finally {
@@ -56,17 +69,17 @@ export default function CSVUploader({ userId, circuitId, carId, circuitThreshold
   };
 
   return (
-    <div className="bg-f1-panel p-6 rounded-lg">
-      <h3 className="text-xl font-bold text-f1-text mb-4">Upload Telemetry</h3>
+    <div className="bg-f1-panel p-6 border border-f1-border">
+      <h3 className="text-sm font-bold text-f1-textGray uppercase tracking-wider mb-4">Upload Telemetry</h3>
       <input
         type="file"
         accept=".csv"
         onChange={handleFileUpload}
         disabled={uploading || !userId || !circuitId || !carId}
-        className="block w-full text-f1-text file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-f1-red file:text-white hover:file:bg-red-700 file:cursor-pointer cursor-pointer"
+        className="block w-full text-f1-text file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-f1-red file:text-white hover:file:bg-red-700 file:cursor-pointer cursor-pointer file:uppercase file:tracking-wider file:font-semibold"
       />
       {status && (
-        <p className="mt-4 text-f1-accent">{status}</p>
+        <p className="mt-4 text-f1-accent text-sm">{status}</p>
       )}
     </div>
   );

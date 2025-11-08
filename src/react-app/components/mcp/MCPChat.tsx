@@ -1,14 +1,20 @@
 import { useState } from 'react';
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  model?: string;
+}
+
 export default function MCPChat() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     const currentInput = input;
     setInput('');
@@ -52,42 +58,30 @@ export default function MCPChat() {
   };
 
   return (
-    <div className="bg-f1-panel rounded-lg h-[600px] flex flex-col">
-      <div className="p-4 border-b border-gray-700">
-        <h3 className="text-xl font-bold text-f1-text">AI Telemetry Coach</h3>
-        <p className="text-sm text-gray-400 mt-1">
+    <div className="bg-f1-panel border border-f1-border h-[600px] flex flex-col">
+      <div className="p-4 border-b border-f1-border flex-shrink-0">
+        <h3 className="text-lg font-bold text-f1-text uppercase tracking-wide">AI Telemetry Coach</h3>
+        <p className="text-xs text-f1-textGray mt-1">
           Powered by DeepSeek R1 + Claude Sonnet 4.5 - Ask questions about sim racing and telemetry
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="text-gray-500 text-center mt-8">
-            <p className="mb-2 font-semibold">Try asking:</p>
-            <ul className="text-sm space-y-2">
-              <li className="bg-f1-background p-2 rounded">"How can I improve my braking technique?"</li>
-              <li className="bg-f1-background p-2 rounded">"What's the best racing line through Monza's first chicane?"</li>
-              <li className="bg-f1-background p-2 rounded">"How do I reduce understeer in high-speed corners?"</li>
-              <li className="bg-f1-background p-2 rounded">"Tips for better throttle control on corner exits?"</li>
-            </ul>
-          </div>
-        )}
-
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.map((msg, idx) => (
           <div
             key={idx}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
+              className={`max-w-[80%] p-3 ${
                 msg.role === 'user'
-                  ? 'bg-f1-accent text-f1-background'
-                  : 'bg-f1-background text-f1-text'
+                  ? 'bg-f1-red text-white'
+                  : 'bg-f1-card text-f1-text border border-f1-border'
               }`}
             >
-              <div className="whitespace-pre-wrap">{msg.content}</div>
+              <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
               {msg.model && (
-                <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-700">
+                <div className="text-xs text-f1-textGray mt-2 pt-2 border-t border-f1-border">
                   {msg.model.includes('deepseek') ? '⚡ DeepSeek R1' :
                    msg.model.includes('claude') ? '🧠 Claude Sonnet 4.5' :
                    msg.model}
@@ -99,15 +93,15 @@ export default function MCPChat() {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-f1-background text-f1-text p-3 rounded-lg flex items-center gap-2">
+            <div className="bg-f1-card text-f1-text p-3 border border-f1-border flex items-center gap-2">
               <div className="animate-pulse">🤖</div>
-              <span>Analyzing with AI...</span>
+              <span className="text-sm">Analyzing with AI...</span>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-f1-border flex-shrink-0 bg-f1-panel">
         <div className="flex gap-2">
           <input
             type="text"
@@ -115,12 +109,12 @@ export default function MCPChat() {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !loading && handleSend()}
             placeholder="Ask about telemetry, racing techniques, setup..."
-            className="flex-1 px-4 py-2 rounded bg-f1-background text-f1-text border border-gray-700 focus:border-f1-accent outline-none"
+            className="flex-1 px-4 py-2 bg-f1-card text-f1-text border border-f1-border focus:border-f1-accent outline-none"
           />
           <button
             onClick={handleSend}
             disabled={loading || !input.trim()}
-            className="px-6 py-2 bg-f1-red hover:bg-red-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-f1-red hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors uppercase tracking-wider font-semibold"
           >
             Send
           </button>

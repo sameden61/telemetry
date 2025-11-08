@@ -1,4 +1,20 @@
-import { useState } from 'react';
+
+interface Option {
+  id: string;
+  display_name?: string;
+  name: string;
+}
+
+interface SelectWithAddProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options?: Option[];
+  onAdd?: () => void;
+  placeholder?: string;
+  addLabel?: string;
+  className?: string;
+}
 
 export default function SelectWithAdd({
   label,
@@ -9,13 +25,10 @@ export default function SelectWithAdd({
   placeholder = "Choose...",
   addLabel = "Add New",
   className = ""
-}) {
-  const [showAddForm, setShowAddForm] = useState(false);
-
-  const handleSelectChange = (e) => {
+}: SelectWithAddProps) {
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
     if (selectedValue === '__ADD_NEW__') {
-      setShowAddForm(true);
       onAdd && onAdd();
     } else {
       onChange(selectedValue);
@@ -24,11 +37,11 @@ export default function SelectWithAdd({
 
   return (
     <div className={className}>
-      <label className="block text-f1-text font-medium mb-2">{label}</label>
+      <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">{label}</label>
       <select
         value={value}
         onChange={handleSelectChange}
-        className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+        className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
       >
         <option value="">{placeholder}</option>
         {options.map(option => (
