@@ -77,69 +77,79 @@ export default function ComparePage() {
   }, [selectedSessions]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-bold text-f1-text">Compare Laps</h2>
+    <div className="max-w-7xl mx-auto space-y-8">
+      <div>
+        <h2 className="text-4xl font-bold text-f1-text mb-2">Compare Laps</h2>
+        <p className="text-gray-400">Analyze and compare telemetry data between sessions</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-f1-panel p-6 rounded-lg">
-          <label className="block text-f1-text font-medium mb-2">Select Circuit</label>
-          <select
-            value={selectedCircuit}
-            onChange={(e) => setSelectedCircuit(e.target.value)}
-            className="w-full bg-f1-background text-f1-text px-4 py-2 rounded border border-gray-700 focus:border-f1-accent outline-none"
-          >
-            <option value="">Choose circuit...</option>
-            {circuits.map(circuit => (
-              <option key={circuit.id} value={circuit.id}>
-                {circuit.display_name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
+        <h3 className="text-xl font-semibold text-f1-text mb-6">Select Track & Car</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-f1-text font-medium mb-2">Circuit</label>
+            <select
+              value={selectedCircuit}
+              onChange={(e) => setSelectedCircuit(e.target.value)}
+              className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+            >
+              <option value="">Choose circuit...</option>
+              {circuits.map(circuit => (
+                <option key={circuit.id} value={circuit.id}>
+                  {circuit.display_name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="bg-f1-panel p-6 rounded-lg">
-          <label className="block text-f1-text font-medium mb-2">Select Car</label>
-          <select
-            value={selectedCar}
-            onChange={(e) => setSelectedCar(e.target.value)}
-            className="w-full bg-f1-background text-f1-text px-4 py-2 rounded border border-gray-700 focus:border-f1-accent outline-none"
-          >
-            <option value="">Choose car...</option>
-            {cars.map(car => (
-              <option key={car.id} value={car.id}>
-                {car.display_name}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="block text-f1-text font-medium mb-2">Car</label>
+            <select
+              value={selectedCar}
+              onChange={(e) => setSelectedCar(e.target.value)}
+              className="w-full bg-f1-background text-f1-text px-4 py-3 rounded-lg border border-gray-700 focus:border-f1-accent focus:ring-2 focus:ring-f1-accent focus:ring-opacity-50 outline-none transition-all"
+            >
+              <option value="">Choose car...</option>
+              {cars.map(car => (
+                <option key={car.id} value={car.id}>
+                  {car.display_name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {sessions.length > 0 && (
-        <div className="bg-f1-panel p-6 rounded-lg">
-          <h3 className="text-xl font-bold text-f1-text mb-4">
-            Select Sessions (max 2)
+        <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
+          <h3 className="text-xl font-semibold text-f1-text mb-6">
+            Select Sessions <span className="text-gray-400 text-sm">(max 2)</span>
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {sessions.map(session => (
               <label
                 key={session.id}
-                className="flex items-center gap-3 p-3 bg-f1-background rounded hover:bg-opacity-80 cursor-pointer"
+                className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition-all border ${
+                  selectedSessions.includes(session.id)
+                    ? 'bg-f1-accent bg-opacity-10 border-f1-accent'
+                    : 'bg-f1-background border-gray-700 hover:border-gray-600'
+                }`}
               >
                 <input
                   type="checkbox"
                   checked={selectedSessions.includes(session.id)}
                   onChange={() => handleSessionSelect(session.id)}
                   disabled={selectedSessions.length >= 2 && !selectedSessions.includes(session.id)}
-                  className="w-4 h-4 accent-f1-accent"
+                  className="w-5 h-5 accent-f1-accent"
                 />
                 <div className="flex-1 text-f1-text">
-                  <span className="font-bold">{session.users.display_name}</span>
-                  <span className="mx-2">•</span>
-                  <span className="font-mono">{session.lap_time.toFixed(3)}s</span>
-                  <span className="mx-2">•</span>
-                  <span className="text-sm text-gray-400">
-                    {new Date(session.session_date).toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-bold text-lg">{session.users.display_name}</span>
+                    <span className="font-mono text-f1-accent text-xl">{session.lap_time.toFixed(3)}s</span>
+                    <span className="text-sm text-gray-400">
+                      {new Date(session.session_date).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
               </label>
             ))}
@@ -158,7 +168,7 @@ export default function ComparePage() {
             onDeltaTypeChange={setDeltaType}
           />
 
-          <div className="bg-f1-panel p-6 rounded-lg">
+          <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
             <TelemetryChart
               sessions={chartData}
               metric={metric}
@@ -167,21 +177,27 @@ export default function ComparePage() {
             />
           </div>
 
-          <div className="bg-f1-panel p-6 rounded-lg">
-            <h3 className="text-xl font-bold text-f1-text mb-4">Lap Summary</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {chartData.map(session => (
-                <div key={session.sessionId} className="text-f1-text">
-                  <p className="font-bold text-lg">{session.userName}</p>
-                  <p className="text-2xl font-mono text-f1-accent">
+          <div className="bg-f1-panel p-8 rounded-xl border border-gray-800 shadow-xl">
+            <h3 className="text-xl font-semibold text-f1-text mb-6">Lap Summary</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {chartData.map((session, idx) => (
+                <div key={session.sessionId} className="bg-f1-background p-6 rounded-lg border border-gray-700">
+                  <p className="text-gray-400 text-sm mb-1">Driver</p>
+                  <p className="font-bold text-2xl text-f1-text mb-3">{session.userName}</p>
+                  <p className="text-gray-400 text-sm mb-1">Lap Time</p>
+                  <p className="text-3xl font-mono text-f1-accent font-bold">
                     {session.lapTime.toFixed(3)}s
                   </p>
-                  {chartData.length === 2 && (
-                    <p className="text-sm text-gray-400">
-                      {chartData[0].sessionId === session.sessionId
-                        ? `Δ: ${(chartData[0].lapTime - chartData[1].lapTime).toFixed(3)}s`
-                        : ''}
-                    </p>
+                  {chartData.length === 2 && idx === 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-700">
+                      <p className="text-gray-400 text-sm mb-1">Delta</p>
+                      <p className={`text-xl font-mono font-bold ${
+                        chartData[0].lapTime < chartData[1].lapTime ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {chartData[0].lapTime < chartData[1].lapTime ? '-' : '+'}
+                        {Math.abs(chartData[0].lapTime - chartData[1].lapTime).toFixed(3)}s
+                      </p>
+                    </div>
                   )}
                 </div>
               ))}
