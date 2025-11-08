@@ -1,65 +1,53 @@
-// src/App.tsx
-
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import cloudflareLogo from "./assets/Cloudflare_Logo.svg";
-import honoLogo from "./assets/hono.svg";
-import "./App.css";
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import PasswordGate from './components/auth/PasswordGate';
+import UploadPage from './pages/Upload';
+import ComparePage from './pages/Compare';
+import DashboardPage from './pages/Dashboard';
+import MCPPage from './pages/MCP';
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [name, setName] = useState("unknown");
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-        <a href="https://hono.dev/" target="_blank">
-          <img src={honoLogo} className="logo cloudflare" alt="Hono logo" />
-        </a>
-        <a href="https://workers.cloudflare.com/" target="_blank">
-          <img
-            src={cloudflareLogo}
-            className="logo cloudflare"
-            alt="Cloudflare logo"
-          />
-        </a>
-      </div>
-      <h1>Hellow</h1>
-      <div className="card">
-        <button
-          onClick={() => setCount((count) => count + 1)}
-          aria-label="increment"
-        >
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <div className="card">
-        <button
-          onClick={() => {
-            fetch("/api/")
-              .then((res) => res.json() as Promise<{ name: string }>)
-              .then((data) => setName(data.name));
-          }}
-          aria-label="get name"
-        >
-          Name from API is: {name}
-        </button>
-        <p>
-          Edit <code>worker/index.ts</code> to change the name
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the logos to learn more</p>
-    </>
+    <PasswordGate>
+      <Router>
+        <div className="min-h-screen bg-f1-background">
+          <nav className="bg-f1-panel border-b border-gray-800">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-f1-text">
+                  Telemetry Compare
+                </h1>
+                <div className="flex gap-4">
+                  <NavLink to="/">Upload</NavLink>
+                  <NavLink to="/compare">Compare</NavLink>
+                  <NavLink to="/dashboard">Dashboard</NavLink>
+                  <NavLink to="/mcp">MCP Chat</NavLink>
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<UploadPage />} />
+              <Route path="/compare" element={<ComparePage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/mcp" element={<MCPPage />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </PasswordGate>
+  );
+}
+
+function NavLink({ to, children }: { to: string; children: React.ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="text-f1-text hover:text-f1-accent transition-colors font-medium"
+    >
+      {children}
+    </Link>
   );
 }
 
