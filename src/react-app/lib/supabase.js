@@ -3,7 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create a mock Supabase client if credentials are not configured
+const createMockClient = () => {
+  const mockError = new Error('Supabase not configured. Please create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+
+  const mockChain = {
+    select: function() { return this; },
+    insert: function() { return this; },
+    single: function() { return Promise.resolve({ data: null, error: mockError }); },
+    order: function() { return Promise.resolve({ data: [], error: mockError }); },
+    eq: function() { return this; },
+    then: function(resolve) { return resolve({ data: null, error: mockError }); },
+  };
+
+  return {
+    from: () => mockChain,
+  };
+};
+
+// Only create real client if both URL and key are provided
+export const supabase = (supabaseUrl && supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : createMockClient();
 
 // Car management functions
 export const addCar = async (name, displayName, manufacturer, category) => {
