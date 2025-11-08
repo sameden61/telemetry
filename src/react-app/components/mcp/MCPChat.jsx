@@ -37,7 +37,8 @@ export default function MCPChat() {
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.response || 'I apologize, but I could not generate a response.'
+        content: data.response || 'I apologize, but I could not generate a response.',
+        model: data.model
       }]);
     } catch (error) {
       console.error('AI Chat Error:', error);
@@ -55,7 +56,7 @@ export default function MCPChat() {
       <div className="p-4 border-b border-gray-700">
         <h3 className="text-xl font-bold text-f1-text">AI Telemetry Coach</h3>
         <p className="text-sm text-gray-400 mt-1">
-          Powered by Cloudflare Workers AI - Ask questions about sim racing and telemetry
+          Powered by DeepSeek R1 + Claude Sonnet 4.5 - Ask questions about sim racing and telemetry
         </p>
       </div>
 
@@ -85,6 +86,13 @@ export default function MCPChat() {
               }`}
             >
               <div className="whitespace-pre-wrap">{msg.content}</div>
+              {msg.model && (
+                <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-700">
+                  {msg.model.includes('deepseek') ? '⚡ DeepSeek R1' :
+                   msg.model.includes('claude') ? '🧠 Claude Sonnet 4.5' :
+                   msg.model}
+                </div>
+              )}
             </div>
           </div>
         ))}
