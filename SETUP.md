@@ -53,6 +53,8 @@ VITE_SUPABASE_ANON_KEY=your_actual_anon_key_here
 
 ### 2. Set Up the Database
 
+#### Option A: Fresh Database Setup
+
 Run the SQL schema in your Supabase SQL Editor:
 
 1. Go to your Supabase Dashboard
@@ -63,11 +65,29 @@ Run the SQL schema in your Supabase SQL Editor:
 
 This will create:
 - `users` table (with Sam and Friend)
+- `cars` table (with Ferrari, Porsche, BMW, Mercedes)
 - `circuits` table (with Monza, Spa, Silverstone)
 - `telemetry_sessions` table
 - `telemetry_data` table
 - `corner_analysis` table
 - All necessary indexes and views
+
+#### Option B: Migrating an Existing Database
+
+If you already have a database from an older version without the `car_id` column:
+
+1. Go to your Supabase Dashboard
+2. Click **SQL Editor** in the left sidebar
+3. Open the file `migration-add-car-id.sql` from this project
+4. Copy and paste the entire contents into the SQL Editor
+5. Click **Run** to execute the migration
+
+This will:
+- Add the `cars` table if missing
+- Add `car_id` column to `telemetry_sessions`
+- Add `car_id` column to `corner_analysis`
+- Set default car for existing records (Ferrari 488 GT3)
+- Create proper indexes
 
 ### 3. Run the Development Server
 
