@@ -3,7 +3,7 @@ import { parseCSV, validateTelemetryData, calculateBestLap, normalizeTelemetryDa
 import { uploadTelemetrySession, uploadTelemetryData } from '../../lib/supabase';
 import { calculateCornerAnalysisForSession } from '../../lib/cornerClassifier';
 
-export default function CSVUploader({ userId, circuitId, circuitThresholds }) {
+export default function CSVUploader({ userId, circuitId, carId, circuitThresholds }) {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
 
@@ -27,6 +27,7 @@ export default function CSVUploader({ userId, circuitId, circuitThresholds }) {
       const session = await uploadTelemetrySession(
         userId,
         circuitId,
+        carId,
         lapTime,
         file.name
       );
@@ -39,6 +40,7 @@ export default function CSVUploader({ userId, circuitId, circuitThresholds }) {
         session.id,
         circuitId,
         userId,
+        carId,
         telemetryData,
         circuitThresholds
       );
@@ -60,7 +62,7 @@ export default function CSVUploader({ userId, circuitId, circuitThresholds }) {
         type="file"
         accept=".csv"
         onChange={handleFileUpload}
-        disabled={uploading || !userId || !circuitId}
+        disabled={uploading || !userId || !circuitId || !carId}
         className="block w-full text-f1-text file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-f1-red file:text-white hover:file:bg-red-700 file:cursor-pointer cursor-pointer"
       />
       {status && (

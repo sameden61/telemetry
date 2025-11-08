@@ -157,6 +157,29 @@ Build output goes to `dist/` directory.
 npm run deploy
 ```
 
+### Setting Up AI API Secrets
+
+The application uses Cloudflare Workers AI (DeepSeek R1) as the primary AI model with Claude Sonnet 4.5 as a fallback. To configure the Claude API key:
+
+1. Install Wrangler CLI (if not already installed):
+```bash
+npm install -g wrangler
+```
+
+2. Authenticate with Cloudflare:
+```bash
+wrangler login
+```
+
+3. Set the Claude API secret (DO NOT commit this to git):
+```bash
+wrangler secret put CLAUDE_API_KEY
+```
+
+When prompted, enter your Claude API key (the one provided to you separately). The key should start with `sk-ant-api03-...`
+
+This securely stores the secret in Cloudflare Workers and makes it available as `c.env.CLAUDE_API_KEY` in your worker code.
+
 ## Adding More Circuits
 
 Edit `database-schema.sql` and add new circuit entries:

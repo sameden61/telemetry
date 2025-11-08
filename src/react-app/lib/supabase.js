@@ -5,13 +5,41 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Car management functions
+export const addCar = async (name, displayName, manufacturer, category) => {
+  const { data, error } = await supabase
+    .from('cars')
+    .insert({
+      name: name.toLowerCase().replace(/\s+/g, '_'),
+      display_name: displayName,
+      manufacturer,
+      category
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getAllCars = async () => {
+  const { data, error } = await supabase
+    .from('cars')
+    .select('*')
+    .order('display_name', { ascending: true });
+
+  if (error) throw error;
+  return data;
+};
+
 // Helper functions
-export const uploadTelemetrySession = async (userId, circuitId, lapTime, fileName) => {
+export const uploadTelemetrySession = async (userId, circuitId, carId, lapTime, fileName) => {
   const { data, error } = await supabase
     .from('telemetry_sessions')
     .insert({
       user_id: userId,
       circuit_id: circuitId,
+      car_id: carId,
       lap_time: lapTime,
       file_name: fileName
     })
@@ -45,15 +73,17 @@ export const uploadTelemetryData = async (sessionId, telemetryPoints) => {
   }
 };
 
-export const getSessionsByCircuit = async (circuitId) => {
+export const getSessionsByCircuitAndCar = async (circuitId, carId) => {
   const { data, error } = await supabase
     .from('telemetry_sessions')
     .select(`
       *,
       users (name, display_name),
-      circuits (name, display_name)
+      circuits (name, display_name),
+      cars (name, display_name, manufacturer)
     `)
     .eq('circuit_id', circuitId)
+    .eq('car_id', carId)
     .order('lap_time', { ascending: true });
 
   if (error) throw error;
@@ -71,12 +101,13 @@ export const getTelemetryData = async (sessionId) => {
   return data;
 };
 
-export const getCornerAnalysis = async (userId, circuitId) => {
+export const getCornerAnalysis = async (userId, circuitId, carId) => {
   const { data, error } = await supabase
     .from('corner_analysis')
     .select('*')
     .eq('user_id', userId)
-    .eq('circuit_id', circuitId);
+    .eq('circuit_id', circuitId)
+    .eq('car_id', carId);
 
   if (error) throw error;
   return data;
@@ -88,7 +119,8 @@ export const getAllCornerAnalysis = async () => {
     .select(`
       *,
       users (name, display_name),
-      circuits (name, display_name)
+      circuits (name, display_name),
+      cars (name, display_name, manufacturer)
     `);
 
   if (error) throw error;
