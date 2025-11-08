@@ -15,6 +15,25 @@ INSERT INTO users (name, display_name) VALUES
   ('friend', 'Friend')
 ON CONFLICT (name) DO NOTHING;
 
+-- Cars table (stores available cars)
+CREATE TABLE IF NOT EXISTS cars (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  manufacturer TEXT,
+  category TEXT,
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default cars
+INSERT INTO cars (name, display_name, manufacturer, category) VALUES
+('ferrari_488_gt3', 'Ferrari 488 GT3', 'Ferrari', 'GT3'),
+('porsche_991_gt3_r', 'Porsche 991 GT3 R', 'Porsche', 'GT3'),
+('mercedes_amg_gt3', 'Mercedes AMG GT3', 'Mercedes', 'GT3'),
+('bmw_m4_gt3', 'BMW M4 GT3', 'BMW', 'GT3')
+ON CONFLICT (name) DO NOTHING;
+
 -- Circuits table (stores circuit configurations)
 CREATE TABLE IF NOT EXISTS circuits (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -37,6 +56,7 @@ CREATE TABLE IF NOT EXISTS telemetry_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   circuit_id UUID REFERENCES circuits(id) ON DELETE CASCADE,
+  car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
   session_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   lap_time DECIMAL(10,3),
   best_lap_number INTEGER,
@@ -63,7 +83,7 @@ CREATE TABLE IF NOT EXISTS telemetry_data (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_telemetry_data_session ON telemetry_data(session_id, data_index);
-CREATE INDEX IF NOT EXISTS idx_telemetry_sessions_user_circuit ON telemetry_sessions(user_id, circuit_id);
+CREATE INDEX IF NOT EXISTS idx_telemetry_sessions_user_circuit_car ON telemetry_sessions(user_id, circuit_id, car_id);
 CREATE INDEX IF NOT EXISTS idx_telemetry_data_distance ON telemetry_data(session_id, distance);
 
 -- Corner analysis cache table (pre-computed corner stats)
@@ -72,6 +92,7 @@ CREATE TABLE IF NOT EXISTS corner_analysis (
   session_id UUID REFERENCES telemetry_sessions(id) ON DELETE CASCADE,
   circuit_id UUID REFERENCES circuits(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
   corner_type TEXT CHECK (corner_type IN ('slow', 'medium', 'fast')),
   entry_speed_avg DECIMAL(10,2),
   exit_speed_avg DECIMAL(10,2),
@@ -81,7 +102,7 @@ CREATE TABLE IF NOT EXISTS corner_analysis (
   calculated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_corner_analysis_lookup ON corner_analysis(user_id, circuit_id, corner_type);
+CREATE INDEX IF NOT EXISTS idx_corner_analysis_lookup ON corner_analysis(user_id, circuit_id, car_id, corner_type);
 
 -- Views for easier querying
 CREATE OR REPLACE VIEW session_comparisons AS
@@ -91,10 +112,12 @@ SELECT
   s1.user_id as user1_id,
   s2.user_id as user2_id,
   s1.circuit_id,
+  s1.car_id,
   s1.lap_time as user1_lap_time,
   s2.lap_time as user2_lap_time,
   s1.lap_time - s2.lap_time as time_delta
 FROM telemetry_sessions s1
 JOIN telemetry_sessions s2
   ON s1.circuit_id = s2.circuit_id
+  AND s1.car_id = s2.car_id
   AND s1.user_id != s2.user_id;

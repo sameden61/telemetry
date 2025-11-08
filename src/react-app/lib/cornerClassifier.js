@@ -86,7 +86,7 @@ export const aggregateCornerStats = (cornerAnalysis, cornerType) => {
   };
 };
 
-export const calculateCornerAnalysisForSession = async (sessionId, circuitId, userId, telemetryData, cornerThresholds) => {
+export const calculateCornerAnalysisForSession = async (sessionId, circuitId, userId, carId, telemetryData, cornerThresholds) => {
   const corners = classifyCorners(telemetryData, cornerThresholds);
   const analysis = analyzeCornerPerformance(telemetryData, corners);
 
@@ -104,6 +104,7 @@ export const calculateCornerAnalysisForSession = async (sessionId, circuitId, us
       session_id: sessionId,
       circuit_id: circuitId,
       user_id: userId,
+      car_id: carId,
       corner_type: type,
       entry_speed_avg: stat.avgEntrySpeed,
       exit_speed_avg: stat.avgExitSpeed,

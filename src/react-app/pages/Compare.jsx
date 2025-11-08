@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { supabase, getSessionsByCircuit, getTelemetryData } from '../lib/supabase';
+import { supabase, getSessionsByCircuitAndCar, getTelemetryData, getAllCars } from '../lib/supabase';
 import TelemetryChart from '../components/charts/TelemetryChart';
 import ChartControls from '../components/charts/ChartControls';
 
 export default function ComparePage() {
   const [circuits, setCircuits] = useState([]);
+  const [cars, setCars] = useState([]);
   const [selectedCircuit, setSelectedCircuit] = useState('');
+  const [selectedCar, setSelectedCar] = useState('');
   const [sessions, setSessions] = useState([]);
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [chartData, setChartData] = useState([]);
@@ -16,24 +18,27 @@ export default function ComparePage() {
   const [deltaType, setDeltaType] = useState('absolute');
 
   useEffect(() => {
-    loadCircuits();
+    loadCircuitsAndCars();
   }, []);
 
   useEffect(() => {
-    if (selectedCircuit) {
+    if (selectedCircuit && selectedCar) {
       loadSessions();
     }
-  }, [selectedCircuit]);
+  }, [selectedCircuit, selectedCar]);
 
-  const loadCircuits = async () => {
-    const { data } = await supabase.from('circuits').select('*');
-    setCircuits(data || []);
+  const loadCircuitsAndCars = async () => {
+    const { data: circuitsData } = await supabase.from('circuits').select('*');
+    const carsData = await getAllCars();
+    setCircuits(circuitsData || []);
+    setCars(carsData || []);
   };
 
   const loadSessions = async () => {
     setLoading(true);
-    const data = await getSessionsByCircuit(selectedCircuit);
+    const data = await getSessionsByCircuitAndCar(selectedCircuit, selectedCar);
     setSessions(data);
+    setSelectedSessions([]);
     setLoading(false);
   };
 
@@ -75,20 +80,38 @@ export default function ComparePage() {
     <div className="space-y-6">
       <h2 className="text-3xl font-bold text-f1-text">Compare Laps</h2>
 
-      <div className="bg-f1-panel p-6 rounded-lg">
-        <label className="block text-f1-text font-medium mb-2">Select Circuit</label>
-        <select
-          value={selectedCircuit}
-          onChange={(e) => setSelectedCircuit(e.target.value)}
-          className="w-full bg-f1-background text-f1-text px-4 py-2 rounded border border-gray-700 focus:border-f1-accent outline-none"
-        >
-          <option value="">Choose circuit...</option>
-          {circuits.map(circuit => (
-            <option key={circuit.id} value={circuit.id}>
-              {circuit.display_name}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-f1-panel p-6 rounded-lg">
+          <label className="block text-f1-text font-medium mb-2">Select Circuit</label>
+          <select
+            value={selectedCircuit}
+            onChange={(e) => setSelectedCircuit(e.target.value)}
+            className="w-full bg-f1-background text-f1-text px-4 py-2 rounded border border-gray-700 focus:border-f1-accent outline-none"
+          >
+            <option value="">Choose circuit...</option>
+            {circuits.map(circuit => (
+              <option key={circuit.id} value={circuit.id}>
+                {circuit.display_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bg-f1-panel p-6 rounded-lg">
+          <label className="block text-f1-text font-medium mb-2">Select Car</label>
+          <select
+            value={selectedCar}
+            onChange={(e) => setSelectedCar(e.target.value)}
+            className="w-full bg-f1-background text-f1-text px-4 py-2 rounded border border-gray-700 focus:border-f1-accent outline-none"
+          >
+            <option value="">Choose car...</option>
+            {cars.map(car => (
+              <option key={car.id} value={car.id}>
+                {car.display_name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {sessions.length > 0 && (
