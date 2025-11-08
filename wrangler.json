@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "telemetry",
   "main": "./src/worker/index.ts",
+  "account_id": "8abb14bdabe24f59b4e1d5ada6712f1c",
   "compatibility_date": "2025-10-08",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
