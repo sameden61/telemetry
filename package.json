@@ -15,7 +15,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.80.0",
     "date-fns": "^4.1.0",
-    "hono": "4.8.2",
+    "hono": "^4.10.4",
     "papaparse": "^5.5.3",
     "plotly.js-dist-min": "^3.2.0",
     "react": "19.0.0",
