@@ -127,7 +127,9 @@ export default function TelemetryChart({
         domain: [0.82, 1],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
-        zerolinewidth: showDelta ? 2 : undefined
+        zerolinewidth: showDelta ? 2 : undefined,
+        autorange: true,
+        fixedrange: false
       },
 
       // Brake subplot (second)
@@ -142,7 +144,9 @@ export default function TelemetryChart({
         domain: [0.615, 0.785],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
-        zerolinewidth: showDelta ? 2 : undefined
+        zerolinewidth: showDelta ? 2 : undefined,
+        autorange: true,
+        fixedrange: false
       },
 
       // Time Delta subplot (third) - always shown as delta when 2 sessions
@@ -157,7 +161,9 @@ export default function TelemetryChart({
         domain: [0.41, 0.58],
         zeroline: true,
         zerolinecolor: '#666666',
-        zerolinewidth: 2
+        zerolinewidth: 2,
+        autorange: true,
+        fixedrange: false
       },
 
       // Throttle subplot (fourth)
@@ -172,7 +178,9 @@ export default function TelemetryChart({
         domain: [0.205, 0.375],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
-        zerolinewidth: showDelta ? 2 : undefined
+        zerolinewidth: showDelta ? 2 : undefined,
+        autorange: true,
+        fixedrange: false
       },
 
       // Gear subplot (bottom)
@@ -188,7 +196,9 @@ export default function TelemetryChart({
         dtick: showDelta ? undefined : 1,
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
-        zerolinewidth: showDelta ? 2 : undefined
+        zerolinewidth: showDelta ? 2 : undefined,
+        autorange: true,
+        fixedrange: false
       }
     };
 

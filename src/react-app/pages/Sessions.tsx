@@ -59,7 +59,9 @@ export default function SessionsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) + 
+           ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   const formatLapTime = (seconds: number) => {
@@ -92,18 +94,18 @@ export default function SessionsPage() {
       ) : (
         <div className="bg-f1-panel border border-f1-border">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-f1-border">
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Driver</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Circuit</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Car</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Lap Time</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">File</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Type</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Version</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Uploaded</th>
-                  <th className="text-left p-4 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Actions</th>
+                <tr className="border-b border-f1-border bg-f1-card">
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Driver</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Circuit</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Car</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Time</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">File</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Type</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Ver</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider">Uploaded</th>
+                  <th className="text-left py-2 px-3 text-f1-textGray text-xs font-semibold uppercase tracking-wider"></th>
                 </tr>
               </thead>
               <tbody>
@@ -112,31 +114,31 @@ export default function SessionsPage() {
                     key={session.id}
                     className="border-b border-f1-border hover:bg-f1-card transition-colors"
                   >
-                    <td className="p-4 text-f1-text font-medium">{session.users.display_name}</td>
-                    <td className="p-4 text-f1-text">{session.circuits.display_name}</td>
-                    <td className="p-4 text-f1-text">{session.cars.display_name}</td>
-                    <td className="p-4 text-f1-accent font-mono font-bold">{formatLapTime(session.lap_time)}</td>
-                    <td className="p-4 text-f1-text text-sm">{session.file_name}</td>
-                    <td className="p-4">
-                      <span className={`text-xs font-bold uppercase px-2 py-1 ${
+                    <td className="py-1.5 px-3 text-f1-text font-medium">{session.users.display_name}</td>
+                    <td className="py-1.5 px-3 text-f1-text">{session.circuits.display_name}</td>
+                    <td className="py-1.5 px-3 text-f1-text text-xs">{session.cars.display_name}</td>
+                    <td className="py-1.5 px-3 text-f1-accent font-mono font-bold text-sm">{formatLapTime(session.lap_time)}</td>
+                    <td className="py-1.5 px-3 text-f1-text text-xs max-w-xs truncate" title={session.file_name}>{session.file_name}</td>
+                    <td className="py-1.5 px-3">
+                      <span className={`text-xs font-bold uppercase px-1.5 py-0.5 ${
                         session.file_type === 'tc' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'
                       }`}>
                         {session.file_type}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <span className="text-xs font-bold uppercase px-2 py-1 bg-gray-700 text-gray-300">
-                        v{session.version}
+                    <td className="py-1.5 px-3">
+                      <span className="text-xs font-bold uppercase px-1.5 py-0.5 bg-gray-700 text-gray-300">
+                        {session.version}
                       </span>
                     </td>
-                    <td className="p-4 text-f1-textGray text-sm">{formatDate(session.uploaded_at || session.session_date)}</td>
-                    <td className="p-4">
+                    <td className="py-1.5 px-3 text-f1-textGray text-xs whitespace-nowrap">{formatDate(session.uploaded_at || session.session_date)}</td>
+                    <td className="py-1.5 px-3">
                       <button
                         onClick={() => handleDelete(session.id, session.file_name)}
                         disabled={deleting === session.id}
-                        className="px-3 py-1 bg-f1-red text-white text-xs font-semibold uppercase tracking-wider hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-2 py-0.5 bg-f1-red text-white text-xs font-semibold uppercase tracking-wider hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {deleting === session.id ? 'Deleting...' : 'Delete'}
+                        {deleting === session.id ? '...' : 'Del'}
                       </button>
                     </td>
                   </tr>
