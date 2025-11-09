@@ -51,13 +51,31 @@ export default function UploadPage() {
   }, []);
 
   const loadData = async () => {
-    const usersResponse = await (supabase.from('users').select('*') as any);
-    const circuitsResponse = await (supabase.from('circuits').select('*') as any);
-    const carsData = await getAllCars();
+    try {
+      console.log('Loading data from Supabase...');
 
-    setUsers(usersResponse.data || []);
-    setCircuits(circuitsResponse.data || []);
-    setCars(carsData || []);
+      const usersResponse = await (supabase.from('users').select('*') as any);
+      console.log('Users response:', usersResponse);
+
+      const circuitsResponse = await (supabase.from('circuits').select('*') as any);
+      console.log('Circuits response:', circuitsResponse);
+
+      const carsData = await getAllCars();
+      console.log('Cars data:', carsData);
+
+      if (usersResponse.error) {
+        console.error('Users error:', usersResponse.error);
+      }
+      if (circuitsResponse.error) {
+        console.error('Circuits error:', circuitsResponse.error);
+      }
+
+      setUsers(usersResponse.data || []);
+      setCircuits(circuitsResponse.data || []);
+      setCars(carsData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
   };
 
   useEffect(() => {

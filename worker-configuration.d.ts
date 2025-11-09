@@ -6,6 +6,7 @@ declare namespace Cloudflare {
 		AI: any;
 		CLAUDE_API_KEY: string;
 		ENVIRONMENT: string;
+		TELEMETRY_FILES: R2Bucket;
 	}
 }
 interface Env extends Cloudflare.Env {}
