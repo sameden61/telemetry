@@ -1,15 +1,9 @@
 import { useState, useEffect } from 'react';
-import { supabase, getSessionsByCircuitAndCar, getTelemetryData, getAllCars } from '../lib/supabase';
+import { getCircuits, getTelemetrySessions, getTelemetryData } from '../lib/api';
 import TelemetryChart from '../components/charts/TelemetryChart';
 import ChartControls from '../components/charts/ChartControls';
 
 interface Circuit {
-  id: string;
-  name: string;
-  display_name: string;
-}
-
-interface Car {
   id: string;
   name: string;
   display_name: string;
@@ -21,7 +15,12 @@ interface Session {
   session_date: string;
   file_type: 'csv' | 'tc';
   file_name: string;
+  version: number;
+  uploaded_at: string;
   users: {
+    display_name: string;
+  };
+  cars: {
     display_name: string;
   };
 }
@@ -35,49 +34,47 @@ interface TelemetryDataPoint {
   rpm: number;
   lateral_g: number;
   longitudinal_g: number;
+  time: number;
+  cumulative_time: number;
   [key: string]: number | undefined;
 }
 
 interface ChartSession {
   sessionId: string;
   userName: string;
+  carName: string;
   lapTime: number;
   data: TelemetryDataPoint[];
 }
 
 export default function ComparePage() {
   const [circuits, setCircuits] = useState<Circuit[]>([]);
-  const [cars, setCars] = useState<Car[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState('');
-  const [selectedCar, setSelectedCar] = useState('');
   const [fileTypeFilter, setFileTypeFilter] = useState<'all' | 'csv' | 'tc'>('all');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [chartData, setChartData] = useState<ChartSession[]>([]);
 
-  const [metric, setMetric] = useState('speed');
   const [showDelta, setShowDelta] = useState(false);
   const [deltaType, setDeltaType] = useState<'absolute' | 'percentage'>('absolute');
 
   useEffect(() => {
-    loadCircuitsAndCars();
+    loadCircuits();
   }, []);
 
   useEffect(() => {
-    if (selectedCircuit && selectedCar) {
+    if (selectedCircuit) {
       loadSessions();
     }
-  }, [selectedCircuit, selectedCar]);
+  }, [selectedCircuit]);
 
-  const loadCircuitsAndCars = async () => {
-    const circuitsResponse = await (supabase.from('circuits').select('*') as any);
-    const carsData = await getAllCars();
-    setCircuits(circuitsResponse.data || []);
-    setCars(carsData || []);
+  const loadCircuits = async () => {
+    const circuitsData = await getCircuits();
+    setCircuits(circuitsData || []);
   };
 
   const loadSessions = async () => {
-    const data = await getSessionsByCircuitAndCar(selectedCircuit, selectedCar);
+    const data = await getTelemetrySessions({ circuitId: selectedCircuit });
     setSessions(data);
     setSelectedSessions([]);
   };
@@ -108,6 +105,7 @@ export default function ComparePage() {
         return {
           sessionId,
           userName: session!.users.display_name,
+          carName: session!.cars.display_name,
           lapTime: session!.lap_time,
           data: telemetry
         };
@@ -124,12 +122,12 @@ export default function ComparePage() {
     <div className="space-y-6">
       <div className="border-b border-f1-border pb-4">
         <h2 className="text-2xl font-bold text-f1-text uppercase tracking-wide">Compare Laps</h2>
-        <p className="text-f1-textGray text-sm mt-1">Analyze and compare telemetry data between sessions</p>
+        <p className="text-f1-textGray text-sm mt-1">Compare telemetry data across different cars and drivers on the same circuit</p>
       </div>
 
       <div className="bg-f1-panel p-6 border border-f1-border">
-        <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Select Track & Car</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Select Track & File Type</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">Circuit</label>
             <select
@@ -141,22 +139,6 @@ export default function ComparePage() {
               {circuits.map(circuit => (
                 <option key={circuit.id} value={circuit.id}>
                   {circuit.display_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">Car</label>
-            <select
-              value={selectedCar}
-              onChange={(e) => setSelectedCar(e.target.value)}
-              className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
-            >
-              <option value="">Choose car...</option>
-              {cars.map(car => (
-                <option key={car.id} value={car.id}>
-                  {car.display_name}
                 </option>
               ))}
             </select>
@@ -202,16 +184,26 @@ export default function ComparePage() {
                 <div className="flex-1 text-f1-text">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-bold">{session.users.display_name}</span>
-                    <span className="font-mono text-f1-accent text-lg">{session.lap_time.toFixed(3)}s</span>
+                    <span className="text-sm text-f1-textGray">in</span>
+                    <span className="font-semibold text-f1-accent">{session.cars.display_name}</span>
+                    <span className="font-mono text-f1-text text-lg font-bold">{session.lap_time.toFixed(3)}s</span>
                     <span className={`text-xs font-bold uppercase px-2 py-1 ${
                       session.file_type === 'tc' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'
                     }`}>
                       {session.file_type}
                     </span>
-                    <span className="text-xs text-f1-textGray">
-                      {new Date(session.session_date).toLocaleDateString()}
+                    <span className="text-xs font-bold uppercase px-2 py-1 bg-gray-700 text-gray-300">
+                      v{session.version}
+                    </span>
+                    <span className="text-xs text-f1-textGray" title={`Uploaded: ${new Date(session.uploaded_at).toLocaleString()}`}>
+                      {new Date(session.uploaded_at || session.session_date).toLocaleDateString()}
                     </span>
                   </div>
+                  {session.file_name && (
+                    <div className="text-xs text-f1-textGray mt-1">
+                      {session.file_name}
+                    </div>
+                  )}
                 </div>
               </label>
             ))}
@@ -222,8 +214,6 @@ export default function ComparePage() {
       {chartData.length > 0 && (
         <>
           <ChartControls
-            metric={metric}
-            onMetricChange={setMetric}
             showDelta={showDelta}
             onDeltaToggle={setShowDelta}
             deltaType={deltaType}
@@ -233,7 +223,6 @@ export default function ComparePage() {
           <div className="bg-f1-panel p-6 border border-f1-border">
             <TelemetryChart
               sessions={chartData}
-              metric={metric}
               showDelta={showDelta}
               deltaType={deltaType}
             />
@@ -245,7 +234,9 @@ export default function ComparePage() {
               {chartData.map((session, idx) => (
                 <div key={session.sessionId} className="bg-f1-card p-6 border border-f1-border">
                   <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Driver</p>
-                  <p className="font-bold text-xl text-f1-text mb-4">{session.userName}</p>
+                  <p className="font-bold text-xl text-f1-text mb-1">{session.userName}</p>
+                  <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Car</p>
+                  <p className="font-semibold text-lg text-f1-accent mb-4">{session.carName}</p>
                   <p className="text-f1-textGray text-xs uppercase tracking-wider mb-1">Lap Time</p>
                   <p className="text-2xl font-mono text-f1-accent font-bold">
                     {session.lapTime.toFixed(3)}s

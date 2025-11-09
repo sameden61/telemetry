@@ -1,25 +1,17 @@
 import { useState } from 'react';
 import { parseCSV, validateTelemetryData, calculateBestLap, normalizeTelemetryData } from '../../lib/csvParser';
 import { parseTCFile, validateTCFile, calculateTCLapTime, convertTCToTelemetry } from '../../lib/tcParser';
-import { uploadTelemetrySession, uploadTelemetryData } from '../../lib/supabase';
-import { calculateCornerAnalysisForSession } from '../../lib/cornerClassifier';
-
-interface CornerThresholds {
-  slow: { min: number; max: number };
-  medium: { min: number; max: number };
-  fast: { min: number; max: number };
-}
+import { createTelemetrySession, uploadTelemetryData } from '../../lib/api';
 
 interface TelemetryUploaderProps {
   userId: string;
   circuitId: string;
   carId: string;
-  circuitThresholds: CornerThresholds | null;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-export default function TelemetryUploader({ userId, circuitId, carId, circuitThresholds }: TelemetryUploaderProps) {
+export default function TelemetryUploader({ userId, circuitId, carId }: TelemetryUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [fileType, setFileType] = useState<'csv' | 'tc' | null>(null);
@@ -59,10 +51,13 @@ export default function TelemetryUploader({ userId, circuitId, carId, circuitThr
 
     setStatus('Calculating lap time...');
     const lapTime = calculateBestLap(telemetryData);
+    if (!lapTime) {
+      throw new Error('Could not calculate lap time from telemetry data');
+    }
 
     // Create placeholder session first to get session ID
     setStatus('Creating session...');
-    const session = await uploadTelemetrySession(
+    const session = await createTelemetrySession(
       userId,
       circuitId,
       carId,
@@ -77,16 +72,6 @@ export default function TelemetryUploader({ userId, circuitId, carId, circuitThr
 
     setStatus('Uploading telemetry data...');
     await uploadTelemetryData(session.id, telemetryData);
-
-    setStatus('Analyzing corners...');
-    await calculateCornerAnalysisForSession(
-      session.id,
-      circuitId,
-      userId,
-      carId,
-      telemetryData,
-      circuitThresholds
-    );
 
     return session;
   };
@@ -104,7 +89,7 @@ export default function TelemetryUploader({ userId, circuitId, carId, circuitThr
 
     // Create placeholder session first to get session ID
     setStatus('Creating session...');
-    const session = await uploadTelemetrySession(
+    const session = await createTelemetrySession(
       userId,
       circuitId,
       carId,
@@ -119,16 +104,6 @@ export default function TelemetryUploader({ userId, circuitId, carId, circuitThr
 
     setStatus('Uploading telemetry data...');
     await uploadTelemetryData(session.id, telemetryData);
-
-    setStatus('Analyzing corners...');
-    await calculateCornerAnalysisForSession(
-      session.id,
-      circuitId,
-      userId,
-      carId,
-      telemetryData,
-      circuitThresholds
-    );
 
     return session;
   };

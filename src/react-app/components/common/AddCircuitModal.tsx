@@ -1,17 +1,11 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { addCircuit } from '../../lib/api';
 import Modal from './Modal';
 
 interface Circuit {
   id: string;
   name: string;
   display_name: string;
-  country: string;
-  corner_classifications: {
-    slow: { min: number; max: number };
-    medium: { min: number; max: number };
-    fast: { min: number; max: number };
-  };
 }
 
 interface AddCircuitModalProps {
@@ -21,15 +15,7 @@ interface AddCircuitModalProps {
 }
 
 export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }: AddCircuitModalProps) {
-  const [formData, setFormData] = useState({
-    displayName: '',
-    country: '',
-    slowMin: 50,
-    slowMax: 100,
-    mediumMin: 100,
-    mediumMax: 150,
-    fastMin: 150
-  });
+  const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,35 +25,13 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }: Add
     setIsSubmitting(true);
 
     try {
-      const cornerClassifications = {
-        slow: { min: formData.slowMin, max: formData.slowMax },
-        medium: { min: formData.mediumMin, max: formData.mediumMax },
-        fast: { min: formData.fastMin, max: 999 }
-      };
-
-      const { data, error } = await supabase
-        .from('circuits')
-        .insert({
-          name: formData.displayName.toLowerCase().replace(/\s+/g, '_'),
-          display_name: formData.displayName,
-          country: formData.country,
-          corner_classifications: cornerClassifications
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await addCircuit({
+        name: displayName.toLowerCase().replace(/\s+/g, '_'),
+        display_name: displayName
+      });
 
       // Reset form and close modal
-      setFormData({
-        displayName: '',
-        country: '',
-        slowMin: 50,
-        slowMax: 100,
-        mediumMin: 100,
-        mediumMax: 150,
-        fastMin: 150
-      });
+      setDisplayName('');
       onCircuitAdded && onCircuitAdded(data as Circuit);
       onClose();
     } catch (err: any) {
@@ -79,15 +43,7 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }: Add
   };
 
   const handleClose = () => {
-    setFormData({
-      displayName: '',
-      country: '',
-      slowMin: 50,
-      slowMax: 100,
-      mediumMin: 100,
-      mediumMax: 150,
-      fastMin: 150
-    });
+    setDisplayName('');
     setError(null);
     onClose();
   };
@@ -107,97 +63,19 @@ export default function AddCircuitModal({ isOpen, onClose, onCircuitAdded }: Add
           </label>
           <input
             type="text"
-            value={formData.displayName}
-            onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-            placeholder="e.g., Monza, Spa-Francorchamps"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="e.g., Monza, Spa-Francorchamps, Interlagos"
             className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
             required
             autoFocus
           />
         </div>
 
-        <div>
-          <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">
-            Country *
-          </label>
-          <input
-            type="text"
-            value={formData.country}
-            onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-            placeholder="e.g., Italy, Belgium"
-            className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
-            required
-          />
-        </div>
-
-        <div className="border-t border-f1-border pt-4">
-          <h4 className="text-f1-textGray text-xs font-semibold mb-3 uppercase tracking-wider">Corner Speed Thresholds (km/h)</h4>
-
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-green-400 mb-1">Slow Min</label>
-                <input
-                  type="number"
-                  value={formData.slowMin}
-                  onChange={(e) => setFormData({ ...formData, slowMin: parseInt(e.target.value) })}
-                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-green-400 outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-green-400 mb-1">Slow Max</label>
-                <input
-                  type="number"
-                  value={formData.slowMax}
-                  onChange={(e) => setFormData({ ...formData, slowMax: parseInt(e.target.value) })}
-                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-green-400 outline-none"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-yellow-400 mb-1">Medium Min</label>
-                <input
-                  type="number"
-                  value={formData.mediumMin}
-                  onChange={(e) => setFormData({ ...formData, mediumMin: parseInt(e.target.value) })}
-                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-yellow-400 outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-yellow-400 mb-1">Medium Max</label>
-                <input
-                  type="number"
-                  value={formData.mediumMax}
-                  onChange={(e) => setFormData({ ...formData, mediumMax: parseInt(e.target.value) })}
-                  className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-yellow-400 outline-none"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs text-red-400 mb-1">Fast Min</label>
-              <input
-                type="number"
-                value={formData.fastMin}
-                onChange={(e) => setFormData({ ...formData, fastMin: parseInt(e.target.value) })}
-                className="w-full bg-f1-card text-f1-text px-3 py-2 border border-f1-border focus:border-red-400 outline-none"
-                required
-              />
-              <p className="text-xs text-f1-textGray mt-1">Maximum is unlimited</p>
-            </div>
-          </div>
-        </div>
-
         <div className="flex gap-3 pt-4">
           <button
             type="submit"
-            disabled={isSubmitting || !formData.displayName.trim() || !formData.country.trim()}
+            disabled={isSubmitting || !displayName.trim()}
             className="flex-1 bg-f1-red hover:bg-red-700 text-white font-semibold py-2 px-6 uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Adding...' : 'Add Circuit'}

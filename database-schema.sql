@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS telemetry_data (
   rpm INTEGER,
   lateral_g DECIMAL(5,3),
   longitudinal_g DECIMAL(5,3),
+  time DECIMAL(10,3), -- Time in seconds for segment between this point and previous
+  cumulative_time DECIMAL(10,3), -- Cumulative time from start of lap in seconds
   data_index INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -85,6 +87,7 @@ CREATE TABLE IF NOT EXISTS telemetry_data (
 CREATE INDEX IF NOT EXISTS idx_telemetry_data_session ON telemetry_data(session_id, data_index);
 CREATE INDEX IF NOT EXISTS idx_telemetry_sessions_user_circuit_car ON telemetry_sessions(user_id, circuit_id, car_id);
 CREATE INDEX IF NOT EXISTS idx_telemetry_data_distance ON telemetry_data(session_id, distance);
+CREATE INDEX IF NOT EXISTS idx_telemetry_data_cumulative_time ON telemetry_data(session_id, cumulative_time);
 
 -- Corner analysis cache table (pre-computed corner stats)
 CREATE TABLE IF NOT EXISTS corner_analysis (

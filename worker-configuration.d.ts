@@ -5,6 +5,8 @@ declare namespace Cloudflare {
 	interface Env {
 		AI: any;
 		CLAUDE_API_KEY: string;
+		SUPABASE_URL: string;
+		SUPABASE_ANON_KEY: string;
 		ENVIRONMENT: string;
 		TELEMETRY_FILES: R2Bucket;
 	}

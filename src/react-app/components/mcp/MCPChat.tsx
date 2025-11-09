@@ -60,10 +60,20 @@ export default function MCPChat() {
   return (
     <div className="bg-f1-panel border border-f1-border h-[600px] flex flex-col">
       <div className="p-4 border-b border-f1-border flex-shrink-0">
-        <h3 className="text-lg font-bold text-f1-text uppercase tracking-wide">AI Telemetry Coach</h3>
+        <h3 className="text-lg font-bold text-f1-text uppercase tracking-wide">MCP Telemetry Analyst</h3>
         <p className="text-xs text-f1-textGray mt-1">
-          Powered by DeepSeek R1 + Claude Sonnet 4.5 - Ask questions about sim racing and telemetry
+          Powered by Llama 4 Scout + Claude Sonnet 4.5 - Quantitative analysis of your telemetry data
         </p>
+        <div className="mt-3 p-3 bg-f1-card border border-f1-border">
+          <p className="text-xs text-f1-textGray font-semibold mb-2 uppercase tracking-wide">Example Questions:</p>
+          <ul className="text-xs text-f1-text space-y-1">
+            <li>• What's the average speed in session X at distances 500-1000m?</li>
+            <li>• Where are the braking zones in session Y?</li>
+            <li>• Compare throttle application between sessions A and B</li>
+            <li>• What gear is used most frequently at distance 1500m?</li>
+            <li>• Calculate average speed per gear across all sessions</li>
+          </ul>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
@@ -82,7 +92,7 @@ export default function MCPChat() {
               <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
               {msg.model && (
                 <div className="text-xs text-f1-textGray mt-2 pt-2 border-t border-f1-border">
-                  {msg.model.includes('deepseek') ? '⚡ DeepSeek R1' :
+                  {msg.model.includes('llama') ? '🦙 Llama 4 Scout' :
                    msg.model.includes('claude') ? '🧠 Claude Sonnet 4.5' :
                    msg.model}
                 </div>
@@ -108,7 +118,7 @@ export default function MCPChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !loading && handleSend()}
-            placeholder="Ask about telemetry, racing techniques, setup..."
+            placeholder="Ask about your telemetry data (e.g., average speed, braking zones, throttle patterns)..."
             className="flex-1 px-4 py-2 bg-f1-card text-f1-text border border-f1-border focus:border-f1-accent outline-none"
           />
           <button

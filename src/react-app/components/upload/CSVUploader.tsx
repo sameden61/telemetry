@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { parseCSV, validateTelemetryData, calculateBestLap, normalizeTelemetryData } from '../../lib/csvParser';
-import { uploadTelemetrySession, uploadTelemetryData } from '../../lib/supabase';
+import { createTelemetrySession, uploadTelemetryData } from '../../lib/api';
 import { calculateCornerAnalysisForSession } from '../../lib/cornerClassifier';
 
 interface CornerThresholds {
@@ -35,9 +35,12 @@ export default function CSVUploader({ userId, circuitId, carId, circuitThreshold
 
       setStatus('Calculating lap time...');
       const lapTime = calculateBestLap(telemetryData);
+      if (!lapTime) {
+        throw new Error('Could not calculate lap time from telemetry data');
+      }
 
       setStatus('Creating session...');
-      const session = await uploadTelemetrySession(
+      const session = await createTelemetrySession(
         userId,
         circuitId,
         carId,

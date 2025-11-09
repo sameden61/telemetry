@@ -97,10 +97,10 @@ export const calculateCornerAnalysisForSession = async (sessionId, circuitId, us
   };
 
   // Store in corner_analysis table
-  const { supabase } = await import('./supabase.js');
+  const { saveCornerAnalysis } = await import('./api.ts');
 
   for (const [type, stat] of Object.entries(stats)) {
-    await supabase.from('corner_analysis').insert({
+    await saveCornerAnalysis({
       session_id: sessionId,
       circuit_id: circuitId,
       user_id: userId,

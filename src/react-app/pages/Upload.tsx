@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, getAllCars } from '../lib/supabase';
+import { getUsers, getCircuits, getCars } from '../lib/api';
 import TelemetryUploader from '../components/upload/TelemetryUploader';
 import SelectWithAdd from '../components/common/SelectWithAdd';
 import AddUserModal from '../components/common/AddUserModal';
@@ -16,19 +16,12 @@ interface Circuit {
   id: string;
   name: string;
   display_name: string;
-  country: string;
-  corner_classifications: {
-    slow: { min: number; max: number };
-    medium: { min: number; max: number };
-    fast: { min: number; max: number };
-  };
 }
 
 interface Car {
   id: string;
   name: string;
   display_name: string;
-  manufacturer: string;
   category: string;
 }
 
@@ -39,7 +32,6 @@ export default function UploadPage() {
   const [selectedUser, setSelectedUser] = useState('');
   const [selectedCircuit, setSelectedCircuit] = useState('');
   const [selectedCar, setSelectedCar] = useState('');
-  const [circuitThresholds, setCircuitThresholds] = useState<Circuit['corner_classifications'] | null>(null);
 
   // Modal states
   const [showAddUser, setShowAddUser] = useState(false);
@@ -52,40 +44,25 @@ export default function UploadPage() {
 
   const loadData = async () => {
     try {
-      console.log('Loading data from Supabase...');
+      console.log('Loading data from API...');
 
-      const usersResponse = await (supabase.from('users').select('*') as any);
-      console.log('Users response:', usersResponse);
+      const [usersData, circuitsData, carsData] = await Promise.all([
+        getUsers(),
+        getCircuits(),
+        getCars(),
+      ]);
 
-      const circuitsResponse = await (supabase.from('circuits').select('*') as any);
-      console.log('Circuits response:', circuitsResponse);
+      console.log('Users:', usersData);
+      console.log('Circuits:', circuitsData);
+      console.log('Cars:', carsData);
 
-      const carsData = await getAllCars();
-      console.log('Cars data:', carsData);
-
-      if (usersResponse.error) {
-        console.error('Users error:', usersResponse.error);
-      }
-      if (circuitsResponse.error) {
-        console.error('Circuits error:', circuitsResponse.error);
-      }
-
-      setUsers(usersResponse.data || []);
-      setCircuits(circuitsResponse.data || []);
+      setUsers(usersData || []);
+      setCircuits(circuitsData || []);
       setCars(carsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
   };
-
-  useEffect(() => {
-    if (selectedCircuit) {
-      const circuit = circuits.find(c => c.id === selectedCircuit);
-      if (circuit) {
-        setCircuitThresholds(circuit.corner_classifications);
-      }
-    }
-  }, [selectedCircuit, circuits]);
 
   const handleUserAdded = (newUser: User) => {
     setUsers([...users, newUser]);
@@ -148,28 +125,7 @@ export default function UploadPage() {
         userId={selectedUser}
         circuitId={selectedCircuit}
         carId={selectedCar}
-        circuitThresholds={circuitThresholds}
       />
-
-      {circuitThresholds && (
-        <div className="bg-f1-panel p-6 border border-f1-border">
-          <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Corner Speed Classifications</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-f1-card border border-green-900 p-4">
-              <p className="font-bold text-green-400 text-xs uppercase tracking-wider mb-2">Slow Corners</p>
-              <p className="text-f1-text text-lg font-mono">{circuitThresholds.slow.min} - {circuitThresholds.slow.max} km/h</p>
-            </div>
-            <div className="bg-f1-card border border-yellow-900 p-4">
-              <p className="font-bold text-yellow-400 text-xs uppercase tracking-wider mb-2">Medium Corners</p>
-              <p className="text-f1-text text-lg font-mono">{circuitThresholds.medium.min} - {circuitThresholds.medium.max} km/h</p>
-            </div>
-            <div className="bg-f1-card border border-red-900 p-4">
-              <p className="font-bold text-red-400 text-xs uppercase tracking-wider mb-2">Fast Corners</p>
-              <p className="text-f1-text text-lg font-mono">{circuitThresholds.fast.min}+ km/h</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modals */}
       <AddUserModal

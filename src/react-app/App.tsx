@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import PasswordGate from './components/auth/PasswordGate';
 import UploadPage from './pages/Upload';
 import ComparePage from './pages/Compare';
+import SessionsPage from './pages/Sessions';
 import DashboardPage from './pages/Dashboard';
 import MCPPage from './pages/MCP';
 
@@ -21,8 +22,10 @@ function AppContent() {
   const navItems = [
     { path: '/', label: 'Upload Telemetry' },
     { path: '/compare', label: 'Compare Laps' },
-    { path: '/dashboard', label: 'Analytics' },
-    { path: '/mcp', label: 'AI Coach' },
+    { path: '/sessions', label: 'All Sessions' },
+    // Hidden until ready
+    // { path: '/dashboard', label: 'Analytics' },
+    // { path: '/mcp', label: 'MCP Analysis' },
   ];
 
   return (
@@ -72,6 +75,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<UploadPage />} />
             <Route path="/compare" element={<ComparePage />} />
+            <Route path="/sessions" element={<SessionsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/mcp" element={<MCPPage />} />
           </Routes>

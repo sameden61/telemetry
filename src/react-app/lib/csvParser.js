@@ -58,14 +58,47 @@ export const calculateBestLap = (data) => {
 };
 
 export const normalizeTelemetryData = (data) => {
-  return data.map(point => ({
-    distance: parseFloat(point.distance) || 0,
-    speed: parseFloat(point.speed) || 0,
-    throttle: parseFloat(point.throttle) || 0,
-    brake: parseFloat(point.brake) || 0,
-    gear: parseInt(point.gear) || 0,
-    rpm: parseInt(point.rpm) || 0,
-    lateralG: parseFloat(point.lateralG || point.lateral_g) || 0,
-    longitudinalG: parseFloat(point.longitudinalG || point.longitudinal_g) || 0
-  }));
+  // First, sort by distance to ensure data is in order
+  const sortedData = [...data].sort((a, b) => 
+    (parseFloat(a.distance) || 0) - (parseFloat(b.distance) || 0)
+  );
+  
+  let cumulativeTime = 0;
+  
+  return sortedData.map((point, index) => {
+    const distance = parseFloat(point.distance) || 0;
+    const speed = parseFloat(point.speed) || 0;
+    
+    // Calculate time for this segment
+    let segmentTime = 0;
+    if (index > 0) {
+      const prevPoint = sortedData[index - 1];
+      const prevDistance = parseFloat(prevPoint.distance) || 0;
+      const prevSpeed = parseFloat(prevPoint.speed) || 0;
+      
+      const distanceDelta = distance - prevDistance;
+      const avgSpeed = (speed + prevSpeed) / 2;
+      
+      // Calculate time: time (s) = distance (m) / speed (m/s)
+      // Speed is in km/h, so convert: time (s) = (distance (m) / speed (km/h)) * 3.6
+      if (avgSpeed > 0) {
+        segmentTime = (distanceDelta / avgSpeed) * 3.6;
+      }
+    }
+    
+    cumulativeTime += segmentTime;
+    
+    return {
+      distance,
+      speed,
+      throttle: parseFloat(point.throttle) || 0,
+      brake: parseFloat(point.brake) || 0,
+      gear: parseInt(point.gear) || 0,
+      rpm: parseInt(point.rpm) || 0,
+      lateralG: parseFloat(point.lateralG || point.lateral_g) || 0,
+      longitudinalG: parseFloat(point.longitudinalG || point.longitudinal_g) || 0,
+      time: segmentTime,
+      cumulative_time: cumulativeTime
+    };
+  });
 };

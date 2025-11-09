@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { addUser } from '../../lib/api';
 import Modal from './Modal';
 
 interface User {
@@ -27,16 +27,8 @@ export default function AddUserModal({ isOpen, onClose, onUserAdded }: AddUserMo
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: formData.displayName.toLowerCase().replace(/\s+/g, '_'),
-          display_name: formData.displayName
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const name = formData.displayName.toLowerCase().replace(/\s+/g, '_');
+      const data = await addUser(name, formData.displayName);
 
       // Reset form and close modal
       setFormData({ displayName: '' });

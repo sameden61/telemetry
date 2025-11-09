@@ -34,6 +34,8 @@ export interface TelemetryData {
   rpm: number;
   lateralG: number;
   longitudinalG: number;
+  time: number;           // Time in seconds for this segment
+  cumulative_time: number; // Cumulative time from start in seconds
 }
 
 class BinaryReader {
@@ -130,15 +132,66 @@ export function formatLapTime(milliseconds: number): string {
 }
 
 /**
+ * Estimate track length from TC data using lap time and average speed
+ * Since TC files have normalized position (0-1) but absolute speed (km/h),
+ * we can back-calculate the track length
+ */
+function estimateTrackLength(tcData: TCData): number {
+  // Calculate average speed across the lap
+  const totalSpeed = tcData.datapoints.reduce((sum, point) => sum + point.speed, 0);
+  const avgSpeed = totalSpeed / tcData.datapoints.length; // km/h
+  
+  // Lap time in hours
+  const lapTimeHours = (tcData.header.lapTimeMs / 1000) / 3600;
+  
+  // Distance = Speed × Time
+  const trackLengthKm = avgSpeed * lapTimeHours;
+  
+  return trackLengthKm;
+}
+
+/**
  * Convert TC datapoints to the standardized telemetry format
  * This allows both CSV and TC files to use the same database schema
  */
 export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): TelemetryData[] {
-  return tcData.datapoints.map((point) => {
+  // If track length not provided, estimate it from the data
+  if (!trackLengthKm) {
+    trackLengthKm = estimateTrackLength(tcData);
+  }
+  // First, sort by position to ensure data is in order (should already be sorted, but just to be safe)
+  const sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
+  
+  let cumulativeTime = 0;
+  
+  return sortedDatapoints.map((point, index) => {
     // Calculate distance - if track length is known, use it, otherwise use normalized position
     const distance = trackLengthKm
       ? point.position * trackLengthKm * 1000 // Convert to meters
       : point.position * 1000; // Normalized distance
+
+    // Calculate time for this segment
+    let segmentTime = 0;
+    if (index > 0) {
+      const prevPoint = sortedDatapoints[index - 1];
+      const prevDistance = trackLengthKm
+        ? prevPoint.position * trackLengthKm * 1000
+        : prevPoint.position * 1000;
+      
+      const distanceDelta = distance - prevDistance;
+      
+      // Average speed between this point and previous point
+      const avgSpeed = (point.speed + prevPoint.speed) / 2;
+      
+      // Calculate time: time (s) = distance (m) / speed (m/s)
+      // Speed is in km/h, so convert to m/s by dividing by 3.6
+      // Or equivalently: time (s) = (distance (m) / speed (km/h)) * 3.6
+      if (avgSpeed > 0) {
+        segmentTime = (distanceDelta / avgSpeed) * 3.6;
+      }
+    }
+    
+    cumulativeTime += segmentTime;
 
     return {
       distance,
@@ -148,7 +201,9 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
       gear: point.gear - 1, // AC uses 1-based gear indexing, we use 0-based
       rpm: 0, // TC files don't include RPM data
       lateralG: 0, // TC files don't include G-force data
-      longitudinalG: 0
+      longitudinalG: 0,
+      time: segmentTime,
+      cumulative_time: cumulativeTime
     };
   });
 }

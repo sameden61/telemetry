@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAllCornerAnalysis } from '../../lib/supabase';
+import { getAllCornerAnalysis } from '../../lib/api';
 import StatsCard from './StatsCard';
 
 interface User {
