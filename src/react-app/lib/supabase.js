@@ -54,7 +54,7 @@ export const getAllCars = async () => {
 };
 
 // Helper functions
-export const uploadTelemetrySession = async (userId, circuitId, carId, lapTime, fileName) => {
+export const uploadTelemetrySession = async (userId, circuitId, carId, lapTime, fileName, fileType = 'csv', r2Path = null) => {
   const { data, error } = await supabase
     .from('telemetry_sessions')
     .insert({
@@ -62,7 +62,9 @@ export const uploadTelemetrySession = async (userId, circuitId, carId, lapTime, 
       circuit_id: circuitId,
       car_id: carId,
       lap_time: lapTime,
-      file_name: fileName
+      file_name: fileName,
+      file_type: fileType,
+      r2_path: r2Path
     })
     .select()
     .single();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, getAllCars } from '../lib/supabase';
-import CSVUploader from '../components/upload/CSVUploader';
+import TelemetryUploader from '../components/upload/TelemetryUploader';
 import SelectWithAdd from '../components/common/SelectWithAdd';
 import AddUserModal from '../components/common/AddUserModal';
 import AddCircuitModal from '../components/common/AddCircuitModal';
@@ -126,7 +126,7 @@ export default function UploadPage() {
         </div>
       </div>
 
-      <CSVUploader
+      <TelemetryUploader
         userId={selectedUser}
         circuitId={selectedCircuit}
         carId={selectedCar}

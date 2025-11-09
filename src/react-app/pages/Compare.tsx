@@ -19,6 +19,8 @@ interface Session {
   id: string;
   lap_time: number;
   session_date: string;
+  file_type: 'csv' | 'tc';
+  file_name: string;
   users: {
     display_name: string;
   };
@@ -48,6 +50,7 @@ export default function ComparePage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [selectedCircuit, setSelectedCircuit] = useState('');
   const [selectedCar, setSelectedCar] = useState('');
+  const [fileTypeFilter, setFileTypeFilter] = useState<'all' | 'csv' | 'tc'>('all');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
   const [chartData, setChartData] = useState<ChartSession[]>([]);
@@ -78,6 +81,12 @@ export default function ComparePage() {
     setSessions(data);
     setSelectedSessions([]);
   };
+
+  // Filter sessions based on file type
+  const filteredSessions = sessions.filter(session => {
+    if (fileTypeFilter === 'all') return true;
+    return session.file_type === fileTypeFilter;
+  });
 
   const handleSessionSelect = (sessionId: string) => {
     setSelectedSessions(prev => {
@@ -120,7 +129,7 @@ export default function ComparePage() {
 
       <div className="bg-f1-panel p-6 border border-f1-border">
         <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">Select Track & Car</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">Circuit</label>
             <select
@@ -152,16 +161,29 @@ export default function ComparePage() {
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-f1-textGray text-xs font-medium mb-2 uppercase tracking-wider">File Type</label>
+            <select
+              value={fileTypeFilter}
+              onChange={(e) => setFileTypeFilter(e.target.value as 'all' | 'csv' | 'tc')}
+              className="w-full bg-f1-card text-f1-text px-4 py-2 border border-f1-border focus:border-f1-accent outline-none transition-all"
+            >
+              <option value="all">All Types</option>
+              <option value="csv">CSV Only</option>
+              <option value="tc">TC Only</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {sessions.length > 0 && (
         <div className="bg-f1-panel p-6 border border-f1-border">
           <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">
-            Select Sessions <span className="text-xs">(max 2)</span>
+            Select Sessions <span className="text-xs">(max 2, showing {filteredSessions.length} of {sessions.length})</span>
           </h3>
           <div className="space-y-2">
-            {sessions.map(session => (
+            {filteredSessions.map(session => (
               <label
                 key={session.id}
                 className={`flex items-center gap-4 p-4 cursor-pointer transition-all border ${
@@ -181,6 +203,11 @@ export default function ComparePage() {
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-bold">{session.users.display_name}</span>
                     <span className="font-mono text-f1-accent text-lg">{session.lap_time.toFixed(3)}s</span>
+                    <span className={`text-xs font-bold uppercase px-2 py-1 ${
+                      session.file_type === 'tc' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'
+                    }`}>
+                      {session.file_type}
+                    </span>
                     <span className="text-xs text-f1-textGray">
                       {new Date(session.session_date).toLocaleDateString()}
                     </span>

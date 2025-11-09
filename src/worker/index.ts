@@ -100,6 +100,86 @@ app.post("/api/chat", async (c) => {
   }
 });
 
+// File upload endpoint - stores raw telemetry files to R2
+app.post("/api/upload-file", async (c) => {
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const userId = formData.get('userId') as string;
+    const trackName = formData.get('trackName') as string;
+    const sessionId = formData.get('sessionId') as string;
+
+    if (!file) {
+      return c.json({ error: "No file provided" }, 400);
+    }
+
+    if (!userId || !trackName || !sessionId) {
+      return c.json({ error: "Missing required metadata (userId, trackName, sessionId)" }, 400);
+    }
+
+    // Generate R2 path: users/{userId}/{trackName}/{sessionId}/{filename}
+    const r2Path = `users/${userId}/${trackName}/${sessionId}/${file.name}`;
+
+    // Upload to R2
+    const bucket = c.env.TELEMETRY_FILES;
+    await bucket.put(r2Path, file.stream(), {
+      httpMetadata: {
+        contentType: file.type,
+      },
+      customMetadata: {
+        originalName: file.name,
+        uploadedAt: new Date().toISOString(),
+        userId,
+        trackName,
+        sessionId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      r2Path,
+      fileSize: file.size,
+      fileName: file.name,
+    });
+
+  } catch (error) {
+    console.error("File upload error:", error);
+    return c.json({
+      error: "Failed to upload file",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, 500);
+  }
+});
+
+// Get file from R2
+app.get("/api/get-file/:userId/:trackName/:sessionId/:filename", async (c) => {
+  try {
+    const { userId, trackName, sessionId, filename } = c.req.param();
+    const r2Path = `users/${userId}/${trackName}/${sessionId}/${filename}`;
+
+    const bucket = c.env.TELEMETRY_FILES;
+    const object = await bucket.get(r2Path);
+
+    if (!object) {
+      return c.json({ error: "File not found" }, 404);
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+    });
+
+  } catch (error) {
+    console.error("File retrieval error:", error);
+    return c.json({
+      error: "Failed to retrieve file",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, 500);
+  }
+});
+
 // Telemetry analysis endpoint - get suggestions based on session data
 app.post("/api/analyze-session", async (c) => {
   try {

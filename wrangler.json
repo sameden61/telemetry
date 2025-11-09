@@ -16,6 +16,12 @@
   "ai": {
     "binding": "AI"
   },
+  "r2_buckets": [
+    {
+      "binding": "TELEMETRY_FILES",
+      "bucket_name": "telemetry-files"
+    }
+  ],
   "vars": {
     "ENVIRONMENT": "production"
     }
