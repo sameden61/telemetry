@@ -163,8 +163,46 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
     trackLengthKm = estimateTrackLength(tcData);
   }
   // First, sort by position to ensure data is in order (should already be sorted, but just to be safe)
-  const sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
-  
+  let sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
+
+  // Filter out duplicate consecutive positions (corrupted TC files can have frozen position data)
+  // Keep only points where position actually progresses
+  const filteredDatapoints: TCDataPoint[] = [];
+  const positionThreshold = 0.000001; // Consider positions within this range as duplicates
+
+  for (let i = 0; i < sortedDatapoints.length; i++) {
+    // Always keep first point
+    if (i === 0) {
+      filteredDatapoints.push(sortedDatapoints[i]);
+      continue;
+    }
+
+    // Keep point if position has actually advanced
+    const positionDelta = sortedDatapoints[i].position - sortedDatapoints[i - 1].position;
+    if (positionDelta > positionThreshold) {
+      filteredDatapoints.push(sortedDatapoints[i]);
+    }
+  }
+
+  // If we filtered out points, log a warning and rescale positions to 0-1 range
+  if (filteredDatapoints.length < sortedDatapoints.length) {
+    console.warn(`TC file has corrupted position data: ${sortedDatapoints.length - filteredDatapoints.length} duplicate positions removed`);
+    console.warn(`Position only reached ${(sortedDatapoints[sortedDatapoints.length - 1].position * 100).toFixed(2)}% before freezing`);
+
+    // Rescale positions from their actual range to 0-1
+    const minPos = filteredDatapoints[0].position;
+    const maxPos = filteredDatapoints[filteredDatapoints.length - 1].position;
+    const posRange = maxPos - minPos;
+
+    if (posRange > 0) {
+      filteredDatapoints.forEach(point => {
+        point.position = (point.position - minPos) / posRange;
+      });
+      console.warn(`Rescaled ${filteredDatapoints.length} valid positions to 0-100% range`);
+    }
+  }
+
+  sortedDatapoints = filteredDatapoints;
   let cumulativeTime = 0;
 
   const telemetryData = sortedDatapoints.map((point, index) => {

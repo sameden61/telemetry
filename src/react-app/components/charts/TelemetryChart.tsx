@@ -130,16 +130,16 @@ export default function TelemetryChart({
       },
       margin: { t: 40, r: 40, b: 60, l: 60 },
 
-      // Speed subplot (top)
-      xaxis1: { 
-        gridcolor: '#1a1a1a', 
+      // Speed subplot (top) - 50% taller (27% of height)
+      xaxis1: {
+        gridcolor: '#1a1a1a',
         showticklabels: false,
         matches: 'x'
       },
       yaxis1: {
         title: showDelta ? 'Δ Speed (km/h)' : 'Speed (km/h)',
         gridcolor: '#1a1a1a',
-        domain: [0.82, 1],
+        domain: [0.73, 1],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
         zerolinewidth: showDelta ? 2 : undefined,
@@ -147,16 +147,16 @@ export default function TelemetryChart({
         fixedrange: false
       },
 
-      // Brake subplot (second)
-      xaxis2: { 
-        gridcolor: '#1a1a1a', 
+      // Brake subplot (second) - 20% shorter (13.6% of height)
+      xaxis2: {
+        gridcolor: '#1a1a1a',
         showticklabels: false,
         matches: 'x'
       },
       yaxis2: {
         title: showDelta ? 'Δ Brake (%)' : 'Brake (%)',
         gridcolor: '#1a1a1a',
-        domain: [0.615, 0.785],
+        domain: [0.5475, 0.6835],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
         zerolinewidth: showDelta ? 2 : undefined,
@@ -164,7 +164,7 @@ export default function TelemetryChart({
         fixedrange: false
       },
 
-      // Time Delta subplot (third) - always shown as delta when 2 sessions
+      // Time Delta subplot (third) - 20% shorter (13.6% of height)
       xaxis3: {
         gridcolor: '#1a1a1a',
         showticklabels: false,
@@ -173,7 +173,7 @@ export default function TelemetryChart({
       yaxis3: {
         title: 'Δ Time (s) - Faster vs Slower',
         gridcolor: '#1a1a1a',
-        domain: [0.41, 0.58],
+        domain: [0.365, 0.501],
         zeroline: true,
         zerolinecolor: '#666666',
         zerolinewidth: 2,
@@ -181,16 +181,16 @@ export default function TelemetryChart({
         fixedrange: false
       },
 
-      // Throttle subplot (fourth)
-      xaxis4: { 
-        gridcolor: '#1a1a1a', 
+      // Throttle subplot (fourth) - 20% shorter (13.6% of height)
+      xaxis4: {
+        gridcolor: '#1a1a1a',
         showticklabels: false,
         matches: 'x'
       },
       yaxis4: {
         title: showDelta ? 'Δ Throttle (%)' : 'Throttle (%) - Smoothed',
         gridcolor: '#1a1a1a',
-        domain: [0.205, 0.375],
+        domain: [0.1825, 0.3185],
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
         zerolinewidth: showDelta ? 2 : undefined,
@@ -198,7 +198,7 @@ export default function TelemetryChart({
         fixedrange: false
       },
 
-      // Gear subplot (bottom)
+      // Gear subplot (bottom) - 20% shorter (13.6% of height)
       xaxis: {
         title: 'Lap Progress (%)',
         gridcolor: '#1a1a1a',
@@ -207,7 +207,7 @@ export default function TelemetryChart({
       yaxis5: {
         title: showDelta ? 'Δ Gear' : 'Gear - Smoothed',
         gridcolor: '#1a1a1a',
-        domain: [0, 0.17],
+        domain: [0, 0.136],
         dtick: showDelta ? undefined : 1,
         zeroline: showDelta,
         zerolinecolor: showDelta ? '#666666' : undefined,
