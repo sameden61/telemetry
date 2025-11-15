@@ -188,7 +188,7 @@ export default function TelemetryChart({
         matches: 'x'
       },
       yaxis4: {
-        title: showDelta ? 'Δ Throttle (%)' : 'Throttle (%)',
+        title: showDelta ? 'Δ Throttle (%)' : 'Throttle (%) - Smoothed',
         gridcolor: '#1a1a1a',
         domain: [0.205, 0.375],
         zeroline: showDelta,
@@ -205,7 +205,7 @@ export default function TelemetryChart({
         showticklabels: true
       },
       yaxis5: {
-        title: showDelta ? 'Δ Gear' : 'Gear',
+        title: showDelta ? 'Δ Gear' : 'Gear - Smoothed',
         gridcolor: '#1a1a1a',
         domain: [0, 0.17],
         dtick: showDelta ? undefined : 1,

@@ -59,32 +59,44 @@ export const calculateBestLap = (data) => {
 
 /**
  * Smooth gear and throttle data to remove gear change spikes
+ * Uses median filtering in a sliding window to remove outliers
  */
 const smoothGearChanges = (data) => {
+  const windowSize = 5; // Look at 5 points around each point
+
   for (let i = 0; i < data.length; i++) {
+    // Default to original values
     let smoothedGear = data[i].gear;
     let smoothedThrottle = data[i].throttle;
 
-    // Detect gear change spikes: gear drops significantly and returns quickly
+    // Get window of surrounding points
+    const startIdx = Math.max(0, i - Math.floor(windowSize / 2));
+    const endIdx = Math.min(data.length - 1, i + Math.floor(windowSize / 2));
+
+    // Collect gear values in window
+    const gearWindow = [];
+    const throttleWindow = [];
+
+    for (let j = startIdx; j <= endIdx; j++) {
+      gearWindow.push(data[j].gear);
+      throttleWindow.push(data[j].throttle);
+    }
+
+    // Use median filter for gear (removes single-point spikes)
+    gearWindow.sort((a, b) => a - b);
+    const medianIdx = Math.floor(gearWindow.length / 2);
+    smoothedGear = gearWindow[medianIdx];
+
+    // For throttle, detect if current point is an outlier
+    // If gear changed at this point, interpolate throttle
     if (i > 0 && i < data.length - 1) {
-      const prev = data[i - 1];
-      const curr = data[i];
-      const next = data[i + 1];
+      const gearChanged = data[i].gear !== data[i - 1].gear || data[i].gear !== data[i + 1].gear;
+      const isOutlier = Math.abs(data[i].throttle - data[i - 1].throttle) > 0.3 ||
+                        Math.abs(data[i].throttle - data[i + 1].throttle) > 0.3;
 
-      const scaledDistDelta = next.scaled_distance - prev.scaled_distance;
-
-      // If within 0.15% scaled distance and gear drops then returns
-      if (scaledDistDelta < 0.15) {
-        const gearDropped = curr.gear < prev.gear && curr.gear < next.gear;
-        const gearReturns = Math.abs(next.gear - prev.gear) <= 1;
-
-        if (gearDropped && gearReturns) {
-          // Interpolate gear (use previous gear during spike)
-          smoothedGear = prev.gear;
-
-          // Also interpolate throttle during gear changes
-          smoothedThrottle = (prev.throttle + next.throttle) / 2;
-        }
+      if (gearChanged && isOutlier) {
+        // Interpolate throttle during gear change
+        smoothedThrottle = (data[i - 1].throttle + data[i + 1].throttle) / 2;
       }
     }
 
