@@ -64,7 +64,7 @@ function AppContent() {
         {/* Footer */}
         <div className="p-4 border-t border-f1-border">
           <p className="text-xs text-f1-textGray text-center tracking-wide">
-            POWERED BY SUPABASE
+            
           </p>
         </div>
       </aside>

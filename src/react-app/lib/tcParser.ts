@@ -36,6 +36,7 @@ export interface TelemetryData {
   longitudinalG: number;
   time: number;           // Time in seconds for this segment
   cumulative_time: number; // Cumulative time from start in seconds
+  scaled_distance: number; // Normalized distance 0-100 (percentage of lap)
 }
 
 class BinaryReader {
@@ -203,7 +204,8 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
       lateralG: 0, // TC files don't include G-force data
       longitudinalG: 0,
       time: segmentTime,
-      cumulative_time: cumulativeTime
+      cumulative_time: cumulativeTime,
+      scaled_distance: point.position * 100 // Normalize to 0-100 scale
     };
   });
 }

@@ -13,6 +13,7 @@ interface TelemetryDataPoint {
   longitudinal_g: number;
   time: number;
   cumulative_time: number;
+  scaled_distance: number;
   [key: string]: number | undefined;
 }
 
@@ -63,7 +64,7 @@ export default function TelemetryChart({
         if (!showDelta) {
           sessions.forEach((session, sessionIdx) => {
             traces.push({
-              x: session.data.map(d => d.distance),
+              x: session.data.map(d => d.scaled_distance),
               y: session.data.map(d => d[metric]),
               type: 'scatter',
               mode: 'lines',
@@ -185,7 +186,7 @@ export default function TelemetryChart({
 
       // Gear subplot (bottom)
       xaxis: {
-        title: 'Distance (m)',
+        title: 'Lap Progress (%)',
         gridcolor: '#1a1a1a',
         showticklabels: true
       },
@@ -233,11 +234,11 @@ function calculateTimeDelta(
   yaxis: string,
   showlegend: boolean
 ) {
-  const distances = session1.data.map(d => d.distance);
-  
-  const deltas = distances.map((dist, idx) => {
+  const scaledDistances = session1.data.map(d => d.scaled_distance);
+
+  const deltas = scaledDistances.map((scaledDist, idx) => {
     const p1 = session1.data[idx];
-    const p2 = session2.data.find(d => Math.abs(d.distance - dist) < 1);
+    const p2 = session2.data.find(d => Math.abs(d.scaled_distance - scaledDist) < 0.1);
 
     if (!p1 || !p2) return null;
 
@@ -251,7 +252,7 @@ function calculateTimeDelta(
   }).filter(d => d !== null) as number[];
 
   return {
-    x: distances,
+    x: scaledDistances,
     y: deltas,
     type: 'scatter',
     mode: 'lines',
@@ -271,7 +272,7 @@ function calculateTimeDelta(
 
 /**
  * Calculate the difference between two sessions for a specific metric
- * Returns session1 - session2 at each distance point
+ * Returns session1 - session2 at each scaled distance point
  */
 function calculateMetricDelta(
   session1: Session,
@@ -281,13 +282,13 @@ function calculateMetricDelta(
   yaxis: string,
   showlegend: boolean
 ) {
-  // Use session1 distances as reference
-  const distances = session1.data.map(d => d.distance);
-  
-  const deltas = distances.map((dist, idx) => {
+  // Use session1 scaled distances as reference
+  const scaledDistances = session1.data.map(d => d.scaled_distance);
+
+  const deltas = scaledDistances.map((scaledDist, idx) => {
     const p1 = session1.data[idx];
-    // Find closest matching point in session2 (within 1 meter)
-    const p2 = session2.data.find(d => Math.abs(d.distance - dist) < 1);
+    // Find closest matching point in session2 (within 0.1% of lap)
+    const p2 = session2.data.find(d => Math.abs(d.scaled_distance - scaledDist) < 0.1);
 
     if (!p1 || !p2) return null;
 
@@ -301,7 +302,7 @@ function calculateMetricDelta(
   }).filter(d => d !== null) as number[];
 
   return {
-    x: distances,
+    x: scaledDistances,
     y: deltas,
     type: 'scatter',
     mode: 'lines',

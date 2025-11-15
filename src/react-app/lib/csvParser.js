@@ -59,12 +59,17 @@ export const calculateBestLap = (data) => {
 
 export const normalizeTelemetryData = (data) => {
   // First, sort by distance to ensure data is in order
-  const sortedData = [...data].sort((a, b) => 
+  const sortedData = [...data].sort((a, b) =>
     (parseFloat(a.distance) || 0) - (parseFloat(b.distance) || 0)
   );
-  
+
+  // Calculate max distance for scaling
+  const maxDistance = sortedData.length > 0
+    ? parseFloat(sortedData[sortedData.length - 1].distance) || 1
+    : 1;
+
   let cumulativeTime = 0;
-  
+
   return sortedData.map((point, index) => {
     const distance = parseFloat(point.distance) || 0;
     const speed = parseFloat(point.speed) || 0;
@@ -98,7 +103,8 @@ export const normalizeTelemetryData = (data) => {
       lateralG: parseFloat(point.lateralG || point.lateral_g) || 0,
       longitudinalG: parseFloat(point.longitudinalG || point.longitudinal_g) || 0,
       time: segmentTime,
-      cumulative_time: cumulativeTime
+      cumulative_time: cumulativeTime,
+      scaled_distance: (distance / maxDistance) * 100 // Normalize to 0-100 scale
     };
   });
 };

@@ -252,6 +252,7 @@ app.post("/api/telemetry-data", async (c) => {
       longitudinal_g: point.longitudinalG || point.longitudinal_g || 0,
       time: point.time || 0,
       cumulative_time: point.cumulative_time || point.cumulativeTime || 0,
+      scaled_distance: point.scaled_distance || point.scaledDistance || 0,
       data_index: index
     }));
 
