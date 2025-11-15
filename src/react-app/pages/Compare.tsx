@@ -37,6 +37,8 @@ interface TelemetryDataPoint {
   time: number;
   cumulative_time: number;
   scaled_distance: number;
+  smoothed_gear: number;
+  smoothed_throttle: number;
   [key: string]: number | undefined;
 }
 

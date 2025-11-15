@@ -253,6 +253,8 @@ app.post("/api/telemetry-data", async (c) => {
       time: point.time || 0,
       cumulative_time: point.cumulative_time || point.cumulativeTime || 0,
       scaled_distance: point.scaled_distance || point.scaledDistance || 0,
+      smoothed_gear: point.smoothed_gear || point.smoothedGear || point.gear || 0,
+      smoothed_throttle: point.smoothed_throttle || point.smoothedThrottle || point.throttle || 0,
       data_index: index
     }));
 

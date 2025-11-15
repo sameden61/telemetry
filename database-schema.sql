@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS telemetry_data (
   time DECIMAL(10,3), -- Time in seconds for segment between this point and previous
   cumulative_time DECIMAL(10,3), -- Cumulative time from start of lap in seconds
   scaled_distance DECIMAL(10,6) DEFAULT 0 NOT NULL, -- Normalized distance 0-100 (percentage of lap)
+  smoothed_gear DECIMAL(5,2) DEFAULT 0 NOT NULL, -- Smoothed gear (spikes removed)
+  smoothed_throttle DECIMAL(5,2) DEFAULT 0 NOT NULL, -- Smoothed throttle (gear change artifacts removed)
   data_index INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -37,6 +37,8 @@ export interface TelemetryData {
   time: number;           // Time in seconds for this segment
   cumulative_time: number; // Cumulative time from start in seconds
   scaled_distance: number; // Normalized distance 0-100 (percentage of lap)
+  smoothed_gear: number;   // Smoothed gear (spikes removed)
+  smoothed_throttle: number; // Smoothed throttle (gear change artifacts removed)
 }
 
 class BinaryReader {
@@ -164,8 +166,8 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
   const sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
   
   let cumulativeTime = 0;
-  
-  return sortedDatapoints.map((point, index) => {
+
+  const telemetryData = sortedDatapoints.map((point, index) => {
     // Calculate distance - if track length is known, use it, otherwise use normalized position
     const distance = trackLengthKm
       ? point.position * trackLengthKm * 1000 // Convert to meters
@@ -178,12 +180,12 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
       const prevDistance = trackLengthKm
         ? prevPoint.position * trackLengthKm * 1000
         : prevPoint.position * 1000;
-      
+
       const distanceDelta = distance - prevDistance;
-      
+
       // Average speed between this point and previous point
       const avgSpeed = (point.speed + prevPoint.speed) / 2;
-      
+
       // Calculate time: time (s) = distance (m) / speed (m/s)
       // Speed is in km/h, so convert to m/s by dividing by 3.6
       // Or equivalently: time (s) = (distance (m) / speed (km/h)) * 3.6
@@ -191,7 +193,7 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
         segmentTime = (distanceDelta / avgSpeed) * 3.6;
       }
     }
-    
+
     cumulativeTime += segmentTime;
 
     return {
@@ -205,9 +207,16 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
       longitudinalG: 0,
       time: segmentTime,
       cumulative_time: cumulativeTime,
-      scaled_distance: point.position * 100 // Normalize to 0-100 scale
+      scaled_distance: point.position * 100, // Normalize to 0-100 scale
+      smoothed_gear: point.gear - 1, // Will be smoothed below
+      smoothed_throttle: point.throttle // Will be smoothed below
     };
   });
+
+  // Apply smoothing to remove gear change spikes
+  smoothGearChanges(telemetryData);
+
+  return telemetryData;
 }
 
 /**
@@ -227,6 +236,43 @@ export function validateTCFile(tcData: TCData): boolean {
   }
 
   return true;
+}
+
+/**
+ * Smooth gear and throttle data to remove gear change spikes
+ * Spikes are identified as rapid changes within 0.1% scaled distance
+ */
+function smoothGearChanges(data: TelemetryData[]): void {
+  for (let i = 0; i < data.length; i++) {
+    let smoothedGear = data[i].gear;
+    let smoothedThrottle = data[i].throttle;
+
+    // Detect gear change spikes: gear drops significantly and returns quickly
+    if (i > 0 && i < data.length - 1) {
+      const prev = data[i - 1];
+      const curr = data[i];
+      const next = data[i + 1];
+
+      const scaledDistDelta = next.scaled_distance - prev.scaled_distance;
+
+      // If within 0.1% scaled distance and gear drops then returns
+      if (scaledDistDelta < 0.15) {
+        const gearDropped = curr.gear < prev.gear && curr.gear < next.gear;
+        const gearReturns = Math.abs(next.gear - prev.gear) <= 1;
+
+        if (gearDropped && gearReturns) {
+          // Interpolate gear (use previous gear during spike)
+          smoothedGear = prev.gear;
+
+          // Also interpolate throttle during gear changes
+          smoothedThrottle = (prev.throttle + next.throttle) / 2;
+        }
+      }
+    }
+
+    data[i].smoothed_gear = smoothedGear;
+    data[i].smoothed_throttle = smoothedThrottle;
+  }
 }
 
 /**

@@ -57,6 +57,42 @@ export const calculateBestLap = (data) => {
   return lapTime;
 };
 
+/**
+ * Smooth gear and throttle data to remove gear change spikes
+ */
+const smoothGearChanges = (data) => {
+  for (let i = 0; i < data.length; i++) {
+    let smoothedGear = data[i].gear;
+    let smoothedThrottle = data[i].throttle;
+
+    // Detect gear change spikes: gear drops significantly and returns quickly
+    if (i > 0 && i < data.length - 1) {
+      const prev = data[i - 1];
+      const curr = data[i];
+      const next = data[i + 1];
+
+      const scaledDistDelta = next.scaled_distance - prev.scaled_distance;
+
+      // If within 0.15% scaled distance and gear drops then returns
+      if (scaledDistDelta < 0.15) {
+        const gearDropped = curr.gear < prev.gear && curr.gear < next.gear;
+        const gearReturns = Math.abs(next.gear - prev.gear) <= 1;
+
+        if (gearDropped && gearReturns) {
+          // Interpolate gear (use previous gear during spike)
+          smoothedGear = prev.gear;
+
+          // Also interpolate throttle during gear changes
+          smoothedThrottle = (prev.throttle + next.throttle) / 2;
+        }
+      }
+    }
+
+    data[i].smoothed_gear = smoothedGear;
+    data[i].smoothed_throttle = smoothedThrottle;
+  }
+};
+
 export const normalizeTelemetryData = (data) => {
   // First, sort by distance to ensure data is in order
   const sortedData = [...data].sort((a, b) =>
@@ -70,7 +106,7 @@ export const normalizeTelemetryData = (data) => {
 
   let cumulativeTime = 0;
 
-  return sortedData.map((point, index) => {
+  const telemetryData = sortedData.map((point, index) => {
     const distance = parseFloat(point.distance) || 0;
     const speed = parseFloat(point.speed) || 0;
     
@@ -104,7 +140,14 @@ export const normalizeTelemetryData = (data) => {
       longitudinalG: parseFloat(point.longitudinalG || point.longitudinal_g) || 0,
       time: segmentTime,
       cumulative_time: cumulativeTime,
-      scaled_distance: (distance / maxDistance) * 100 // Normalize to 0-100 scale
+      scaled_distance: (distance / maxDistance) * 100, // Normalize to 0-100 scale
+      smoothed_gear: parseInt(point.gear) || 0, // Will be smoothed below
+      smoothed_throttle: parseFloat(point.throttle) || 0 // Will be smoothed below
     };
   });
+
+  // Apply smoothing to remove gear change spikes
+  smoothGearChanges(telemetryData);
+
+  return telemetryData;
 };

@@ -14,6 +14,8 @@ interface TelemetryDataPoint {
   time: number;
   cumulative_time: number;
   scaled_distance: number;
+  smoothed_gear: number;
+  smoothed_throttle: number;
   [key: string]: number | undefined;
 }
 
@@ -40,19 +42,30 @@ export default function TelemetryChart({
   useEffect(() => {
     if (!sessions || sessions.length === 0 || !plotRef.current) return;
 
-    const colors = ['#00D9FF', '#E10600'];
+    // Determine which session is faster (lower lap time)
+    // Blue for faster, Red for slower
+    let sortedSessions = [...sessions];
+    if (sessions.length === 2) {
+      sortedSessions = [...sessions].sort((a, b) => a.lapTime - b.lapTime);
+    }
+    const colors = sortedSessions.map((session, idx) =>
+      idx === 0 ? '#00D9FF' : '#E10600' // Blue for fastest, red for slower
+    );
+    const sessionColorMap = new Map(sortedSessions.map((session, idx) => [session.sessionId, colors[idx]]));
+
     const traces: any[] = [];
 
-    // Create 5 subplots: Speed, Brake, Time Delta, Throttle, Gear
-    const metrics = ['speed', 'brake', 'cumulative_time', 'throttle', 'gear'];
+    // Create 5 subplots: Speed, Brake, Time Delta, Smoothed Throttle, Smoothed Gear
+    const metrics = ['speed', 'brake', 'cumulative_time', 'smoothed_throttle', 'smoothed_gear'];
 
     metrics.forEach((metric, metricIdx) => {
       // Time delta is always shown as delta (never absolute values)
       if (metric === 'cumulative_time') {
         if (sessions.length === 2) {
+          // Always calculate as faster - slower (sorted sessions)
           const deltaTrace = calculateTimeDelta(
-            sessions[0],
-            sessions[1],
+            sortedSessions[0], // Faster lap
+            sortedSessions[1], // Slower lap
             metricIdx === 4 ? 'x' : `x${metricIdx + 1}`,
             metricIdx === 0 ? 'y' : `y${metricIdx + 1}`,
             false  // Never show legend for time delta
@@ -62,17 +75,18 @@ export default function TelemetryChart({
       } else {
         // When showDelta is false, show the actual session data
         if (!showDelta) {
-          sessions.forEach((session, sessionIdx) => {
+          sessions.forEach((session) => {
+            const lapTimeLabel = `${session.userName} (${session.lapTime.toFixed(3)}s)`;
             traces.push({
               x: session.data.map(d => d.scaled_distance),
               y: session.data.map(d => d[metric]),
               type: 'scatter',
               mode: 'lines',
-              name: session.userName,
+              name: lapTimeLabel,
               legendgroup: session.userName,
               showlegend: metricIdx === 0, // Only show legend on speed graph
               line: {
-                color: colors[sessionIdx] || '#FFFFFF',
+                color: sessionColorMap.get(session.sessionId) || '#FFFFFF',
                 width: 2
               },
               xaxis: metricIdx === 4 ? 'x' : `x${metricIdx + 1}`,
@@ -151,13 +165,13 @@ export default function TelemetryChart({
       },
 
       // Time Delta subplot (third) - always shown as delta when 2 sessions
-      xaxis3: { 
-        gridcolor: '#1a1a1a', 
+      xaxis3: {
+        gridcolor: '#1a1a1a',
         showticklabels: false,
         matches: 'x'
       },
       yaxis3: {
-        title: 'Δ Time (s)',
+        title: 'Δ Time (s) - Faster vs Slower',
         gridcolor: '#1a1a1a',
         domain: [0.41, 0.58],
         zeroline: true,
@@ -225,20 +239,22 @@ export default function TelemetryChart({
 
 /**
  * Calculate cumulative time delta between two sessions
- * Returns session1 - session2 (positive means session1 is slower)
+ * Returns fasterSession - slowerSession
+ * Negative values indicate the faster session is gaining time (ahead)
+ * Positive values indicate the faster session is losing time (behind)
  */
 function calculateTimeDelta(
-  session1: Session,
-  session2: Session,
+  fasterSession: Session,
+  slowerSession: Session,
   xaxis: string,
   yaxis: string,
   showlegend: boolean
 ) {
-  const scaledDistances = session1.data.map(d => d.scaled_distance);
+  const scaledDistances = fasterSession.data.map(d => d.scaled_distance);
 
   const deltas = scaledDistances.map((scaledDist, idx) => {
-    const p1 = session1.data[idx];
-    const p2 = session2.data.find(d => Math.abs(d.scaled_distance - scaledDist) < 0.1);
+    const p1 = fasterSession.data[idx];
+    const p2 = slowerSession.data.find(d => Math.abs(d.scaled_distance - scaledDist) < 0.1);
 
     if (!p1 || !p2) return null;
 
@@ -247,7 +263,9 @@ function calculateTimeDelta(
 
     if (time1 === undefined || time2 === undefined) return null;
 
-    // Delta: positive means session1 is slower (taking more time)
+    // Delta: faster - slower
+    // Negative = faster lap is ahead (gaining time)
+    // Positive = faster lap is behind (losing time to slower lap)
     return time1 - time2;
   }).filter(d => d !== null) as number[];
 
@@ -256,7 +274,7 @@ function calculateTimeDelta(
     y: deltas,
     type: 'scatter',
     mode: 'lines',
-    name: 'Time Delta',
+    name: 'Time Delta (Faster - Slower)',
     line: {
       color: '#FFB800',
       width: 2
