@@ -143,14 +143,80 @@ function estimateTrackLength(tcData: TCData): number {
   // Calculate average speed across the lap
   const totalSpeed = tcData.datapoints.reduce((sum, point) => sum + point.speed, 0);
   const avgSpeed = totalSpeed / tcData.datapoints.length; // km/h
-  
+
   // Lap time in hours
   const lapTimeHours = (tcData.header.lapTimeMs / 1000) / 3600;
-  
+
   // Distance = Speed × Time
   const trackLengthKm = avgSpeed * lapTimeHours;
-  
+
   return trackLengthKm;
+}
+
+/**
+ * Reconstruct position data from speed when position sensor is corrupted/frozen
+ * This keeps ALL telemetry data and estimates position from speed and time
+ */
+function reconstructPositionFromSpeed(datapoints: TCDataPoint[], lapTimeMs: number): TCDataPoint[] {
+  if (datapoints.length === 0) return datapoints;
+
+  const positionThreshold = 0.000001;
+
+  // Find where position stops progressing
+  let lastValidIndex = datapoints.length - 1;
+  for (let i = datapoints.length - 1; i > 0; i--) {
+    const positionDelta = Math.abs(datapoints[i].position - datapoints[i - 1].position);
+    if (positionDelta > positionThreshold) {
+      lastValidIndex = i;
+      break;
+    }
+  }
+
+  // Check if we have frozen position data
+  const hasCorruptedData = lastValidIndex < datapoints.length - 1;
+
+  if (hasCorruptedData) {
+    const numCorrupted = datapoints.length - lastValidIndex - 1;
+    const lastValidPosition = datapoints[lastValidIndex].position;
+    console.warn(`TC file has corrupted position data: ${numCorrupted} points with frozen position at ${(lastValidPosition * 100).toFixed(2)}%`);
+    console.warn(`Reconstructing full lap position from speed data...`);
+
+    // Calculate cumulative distance traveled for ALL points using speed
+    // Estimate time interval between points
+    const lapTimeSec = lapTimeMs / 1000;
+    const avgTimeInterval = lapTimeSec / datapoints.length; // seconds per datapoint
+
+    let cumulativeDistanceKm = 0;
+    const reconstructedPoints = datapoints.map((point, index) => {
+      if (index > 0) {
+        // Calculate distance traveled since last point
+        // distance = speed * time, where speed is in km/h and time is in hours
+        const avgSpeedKmh = (point.speed + datapoints[index - 1].speed) / 2;
+        const timeIntervalHours = avgTimeInterval / 3600;
+        const distanceDelta = avgSpeedKmh * timeIntervalHours;
+        cumulativeDistanceKm += distanceDelta;
+      }
+
+      return {
+        ...point,
+        position: cumulativeDistanceKm // Temporary: store cumulative distance
+      };
+    });
+
+    // Rescale all positions to 0-1 range based on total distance traveled
+    const totalDistance = reconstructedPoints[reconstructedPoints.length - 1].position;
+    if (totalDistance > 0) {
+      reconstructedPoints.forEach(point => {
+        point.position = point.position / totalDistance;
+      });
+      console.warn(`Successfully reconstructed position for ${datapoints.length} points (0-100%)`);
+    }
+
+    return reconstructedPoints;
+  }
+
+  // No corruption detected, return original data
+  return datapoints;
 }
 
 /**
@@ -165,44 +231,9 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
   // First, sort by position to ensure data is in order (should already be sorted, but just to be safe)
   let sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
 
-  // Filter out duplicate consecutive positions (corrupted TC files can have frozen position data)
-  // Keep only points where position actually progresses
-  const filteredDatapoints: TCDataPoint[] = [];
-  const positionThreshold = 0.000001; // Consider positions within this range as duplicates
+  // Detect and fix corrupted position data by reconstructing from speed
+  sortedDatapoints = reconstructPositionFromSpeed(sortedDatapoints, tcData.header.lapTimeMs);
 
-  for (let i = 0; i < sortedDatapoints.length; i++) {
-    // Always keep first point
-    if (i === 0) {
-      filteredDatapoints.push(sortedDatapoints[i]);
-      continue;
-    }
-
-    // Keep point if position has actually advanced
-    const positionDelta = sortedDatapoints[i].position - sortedDatapoints[i - 1].position;
-    if (positionDelta > positionThreshold) {
-      filteredDatapoints.push(sortedDatapoints[i]);
-    }
-  }
-
-  // If we filtered out points, log a warning and rescale positions to 0-1 range
-  if (filteredDatapoints.length < sortedDatapoints.length) {
-    console.warn(`TC file has corrupted position data: ${sortedDatapoints.length - filteredDatapoints.length} duplicate positions removed`);
-    console.warn(`Position only reached ${(sortedDatapoints[sortedDatapoints.length - 1].position * 100).toFixed(2)}% before freezing`);
-
-    // Rescale positions from their actual range to 0-1
-    const minPos = filteredDatapoints[0].position;
-    const maxPos = filteredDatapoints[filteredDatapoints.length - 1].position;
-    const posRange = maxPos - minPos;
-
-    if (posRange > 0) {
-      filteredDatapoints.forEach(point => {
-        point.position = (point.position - minPos) / posRange;
-      });
-      console.warn(`Rescaled ${filteredDatapoints.length} valid positions to 0-100% range`);
-    }
-  }
-
-  sortedDatapoints = filteredDatapoints;
   let cumulativeTime = 0;
 
   const telemetryData = sortedDatapoints.map((point, index) => {
