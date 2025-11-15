@@ -36,6 +36,7 @@ interface TelemetryDataPoint {
   longitudinal_g: number;
   time: number;
   cumulative_time: number;
+  scaled_distance: number;
   [key: string]: number | undefined;
 }
 
@@ -70,7 +71,11 @@ export default function ComparePage() {
 
   const loadCircuits = async () => {
     const circuitsData = await getCircuits();
-    setCircuits(circuitsData || []);
+    // Sort circuits alphabetically by display_name
+    const sortedCircuits = (circuitsData || []).sort((a, b) =>
+      a.display_name.localeCompare(b.display_name)
+    );
+    setCircuits(sortedCircuits);
   };
 
   const loadSessions = async () => {
@@ -79,11 +84,20 @@ export default function ComparePage() {
     setSelectedSessions([]);
   };
 
-  // Filter sessions based on file type
-  const filteredSessions = sessions.filter(session => {
-    if (fileTypeFilter === 'all') return true;
-    return session.file_type === fileTypeFilter;
-  });
+  // Filter and sort sessions based on file type and lap time
+  const filteredSessions = sessions
+    .filter(session => {
+      if (fileTypeFilter === 'all') return true;
+      return session.file_type === fileTypeFilter;
+    })
+    .sort((a, b) => a.lap_time - b.lap_time); // Sort by lap time ascending (fastest first)
+
+  // Auto-select fastest session when sessions load or filter changes
+  useEffect(() => {
+    if (filteredSessions.length > 0 && selectedSessions.length === 0) {
+      setSelectedSessions([filteredSessions[0].id]);
+    }
+  }, [sessions, fileTypeFilter]);
 
   const handleSessionSelect = (sessionId: string) => {
     setSelectedSessions(prev => {
@@ -161,14 +175,14 @@ export default function ComparePage() {
 
       {sessions.length > 0 && (
         <div className="bg-f1-panel p-6 border border-f1-border">
-          <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-4">
+          <h3 className="text-sm font-semibold text-f1-textGray uppercase tracking-wider mb-3">
             Select Sessions <span className="text-xs">(max 2, showing {filteredSessions.length} of {sessions.length})</span>
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-1">
             {filteredSessions.map(session => (
               <label
                 key={session.id}
-                className={`flex items-center gap-4 p-4 cursor-pointer transition-all border ${
+                className={`flex items-center gap-3 p-2 cursor-pointer transition-all border ${
                   selectedSessions.includes(session.id)
                     ? 'bg-f1-card border-f1-red'
                     : 'bg-f1-card border-f1-border hover:border-f1-textGray'
@@ -179,20 +193,20 @@ export default function ComparePage() {
                   checked={selectedSessions.includes(session.id)}
                   onChange={() => handleSessionSelect(session.id)}
                   disabled={selectedSessions.length >= 2 && !selectedSessions.includes(session.id)}
-                  className="w-4 h-4 accent-f1-red"
+                  className="w-4 h-4 accent-f1-red flex-shrink-0"
                 />
-                <div className="flex-1 text-f1-text">
-                  <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex-1 text-f1-text min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap text-sm">
                     <span className="font-bold">{session.users.display_name}</span>
-                    <span className="text-sm text-f1-textGray">in</span>
+                    <span className="text-xs text-f1-textGray">in</span>
                     <span className="font-semibold text-f1-accent">{session.cars.display_name}</span>
-                    <span className="font-mono text-f1-text text-lg font-bold">{session.lap_time.toFixed(3)}s</span>
-                    <span className={`text-xs font-bold uppercase px-2 py-1 ${
+                    <span className="font-mono text-f1-text font-bold">{session.lap_time.toFixed(3)}s</span>
+                    <span className={`text-xs font-bold uppercase px-1.5 py-0.5 ${
                       session.file_type === 'tc' ? 'bg-purple-900 text-purple-300' : 'bg-blue-900 text-blue-300'
                     }`}>
                       {session.file_type}
                     </span>
-                    <span className="text-xs font-bold uppercase px-2 py-1 bg-gray-700 text-gray-300">
+                    <span className="text-xs font-bold uppercase px-1.5 py-0.5 bg-gray-700 text-gray-300">
                       v{session.version}
                     </span>
                     <span className="text-xs text-f1-textGray" title={`Uploaded: ${new Date(session.uploaded_at).toLocaleString()}`}>
@@ -200,7 +214,7 @@ export default function ComparePage() {
                     </span>
                   </div>
                   {session.file_name && (
-                    <div className="text-xs text-f1-textGray mt-1">
+                    <div className="text-xs text-f1-textGray mt-0.5 truncate">
                       {session.file_name}
                     </div>
                   )}

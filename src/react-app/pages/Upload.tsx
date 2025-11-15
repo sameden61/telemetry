@@ -57,8 +57,14 @@ export default function UploadPage() {
       console.log('Cars:', carsData);
 
       setUsers(usersData || []);
-      setCircuits(circuitsData || []);
-      setCars(carsData || []);
+      // Sort circuits alphabetically by display_name
+      setCircuits((circuitsData || []).sort((a, b) =>
+        a.display_name.localeCompare(b.display_name)
+      ));
+      // Sort cars alphabetically by display_name
+      setCars((carsData || []).sort((a, b) =>
+        a.display_name.localeCompare(b.display_name)
+      ));
     } catch (error) {
       console.error('Error loading data:', error);
     }

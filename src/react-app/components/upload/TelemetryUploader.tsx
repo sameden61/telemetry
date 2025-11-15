@@ -15,6 +15,7 @@ export default function TelemetryUploader({ userId, circuitId, carId }: Telemetr
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [fileType, setFileType] = useState<'csv' | 'tc' | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const detectFileType = (fileName: string): 'csv' | 'tc' | null => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -108,10 +109,7 @@ export default function TelemetryUploader({ userId, circuitId, carId }: Telemetr
     return session;
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     setUploading(true);
     setStatus('');
 
@@ -138,9 +136,38 @@ export default function TelemetryUploader({ userId, circuitId, carId }: Telemetr
       console.error(error);
     } finally {
       setUploading(false);
-      // Reset file input
-      e.target.value = '';
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await processFile(file);
+    e.target.value = ''; // Reset file input
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    await processFile(file);
   };
 
   return (
@@ -155,13 +182,41 @@ export default function TelemetryUploader({ userId, circuitId, carId }: Telemetr
         </p>
       </div>
 
-      <input
-        type="file"
-        accept=".csv,.tc"
-        onChange={handleFileUpload}
-        disabled={uploading || !userId || !circuitId || !carId}
-        className="block w-full text-f1-text file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-f1-red file:text-white hover:file:bg-red-700 file:cursor-pointer cursor-pointer file:uppercase file:tracking-wider file:font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-      />
+      {/* Drag and Drop Zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+          isDragging
+            ? 'border-f1-red bg-f1-card/50'
+            : 'border-f1-border hover:border-f1-textGray'
+        } ${uploading || !userId || !circuitId || !carId ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <input
+          type="file"
+          accept=".csv,.tc"
+          onChange={handleFileUpload}
+          disabled={uploading || !userId || !circuitId || !carId}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          id="file-upload"
+        />
+        <div className="pointer-events-none">
+          <svg className="mx-auto h-12 w-12 text-f1-textGray mb-3" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <p className="text-f1-text font-semibold mb-1">
+            {isDragging ? 'Drop file here' : 'Drag and drop your file here'}
+          </p>
+          <p className="text-f1-textGray text-sm mb-2">or</p>
+          <label
+            htmlFor="file-upload"
+            className="inline-block px-4 py-2 bg-f1-red text-white font-semibold uppercase tracking-wider hover:bg-red-700 transition-colors cursor-pointer"
+          >
+            Browse Files
+          </label>
+        </div>
+      </div>
 
       {status && (
         <div className="mt-4 p-3 bg-f1-card border border-f1-border">
