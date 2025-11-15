@@ -87,18 +87,13 @@ const smoothGearChanges = (data) => {
     const medianIdx = Math.floor(gearWindow.length / 2);
     smoothedGear = gearWindow[medianIdx];
 
-    // For throttle, detect if current point is an outlier
-    // If gear changed at this point, interpolate throttle
-    if (i > 0 && i < data.length - 1) {
-      const gearChanged = data[i].gear !== data[i - 1].gear || data[i].gear !== data[i + 1].gear;
-      const isOutlier = Math.abs(data[i].throttle - data[i - 1].throttle) > 0.3 ||
-                        Math.abs(data[i].throttle - data[i + 1].throttle) > 0.3;
-
-      if (gearChanged && isOutlier) {
-        // Interpolate throttle during gear change
-        smoothedThrottle = (data[i - 1].throttle + data[i + 1].throttle) / 2;
-      }
+    // Only smooth throttle if gear was adjusted (gear spike detected)
+    if (smoothedGear !== data[i].gear) {
+      // Gear was smoothed, so also smooth throttle at this point
+      throttleWindow.sort((a, b) => a - b);
+      smoothedThrottle = throttleWindow[medianIdx];
     }
+    // Otherwise keep original throttle value
 
     data[i].smoothed_gear = smoothedGear;
     data[i].smoothed_throttle = smoothedThrottle;
