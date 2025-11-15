@@ -48,7 +48,7 @@ export default function TelemetryChart({
     if (sessions.length === 2) {
       sortedSessions = [...sessions].sort((a, b) => a.lapTime - b.lapTime);
     }
-    const colors = sortedSessions.map((session, idx) =>
+    const colors = sortedSessions.map((_, idx) =>
       idx === 0 ? '#00D9FF' : '#E10600' // Blue for fastest, red for slower
     );
     const sessionColorMap = new Map(sortedSessions.map((session, idx) => [session.sessionId, colors[idx]]));

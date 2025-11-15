@@ -18,10 +18,31 @@ SET smoothed_gear = gear,
 WHERE smoothed_gear = 0 AND smoothed_throttle = 0;
 
 -- Step 3: Verify the migration
+-- Using COUNT(column) instead of > 0 to include valid zero values (like neutral gear)
 SELECT
   COUNT(*) as total_rows,
-  COUNT(CASE WHEN smoothed_gear > 0 THEN 1 END) as rows_with_smoothed_gear,
-  COUNT(CASE WHEN smoothed_throttle > 0 THEN 1 END) as rows_with_smoothed_throttle
+  COUNT(smoothed_gear) as rows_with_smoothed_gear,
+  COUNT(smoothed_throttle) as rows_with_smoothed_throttle,
+  CASE
+    WHEN COUNT(*) = COUNT(smoothed_gear) AND COUNT(*) = COUNT(smoothed_throttle)
+    THEN '✓ ALL ROWS HAVE SMOOTHED VALUES'
+    ELSE '✗ SOME ROWS MISSING SMOOTHED VALUES'
+  END as status
 FROM telemetry_data;
 
--- Expected: All counts should be equal, meaning all rows have smoothed values
+-- Sample verification - show original vs smoothed
+SELECT
+  session_id,
+  data_index,
+  gear as original_gear,
+  smoothed_gear,
+  throttle as original_throttle,
+  smoothed_throttle
+FROM telemetry_data
+ORDER BY session_id, data_index
+LIMIT 10;
+
+-- Expected:
+-- - All three counts should be equal (no rows removed)
+-- - Status should show '✓ ALL ROWS HAVE SMOOTHED VALUES'
+-- - For existing data, smoothed values = original until files are re-uploaded
