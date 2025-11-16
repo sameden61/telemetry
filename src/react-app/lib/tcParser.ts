@@ -155,7 +155,8 @@ function estimateTrackLength(tcData: TCData): number {
 
 /**
  * Reconstruct position data from speed when position sensor is corrupted/frozen
- * This keeps ALL telemetry data and estimates position from speed and time
+ * This keeps ALL telemetry data (even if frozen) and estimates position from speed and time
+ * The corrupted flat sections will be visible in the charts, showing where data quality degraded
  */
 function reconstructPositionFromSpeed(datapoints: TCDataPoint[], lapTimeMs: number): TCDataPoint[] {
   if (datapoints.length === 0) return datapoints;
@@ -163,26 +164,26 @@ function reconstructPositionFromSpeed(datapoints: TCDataPoint[], lapTimeMs: numb
   const positionThreshold = 0.000001;
 
   // Find where position stops progressing
-  let lastValidIndex = datapoints.length - 1;
+  let lastValidPosIndex = datapoints.length - 1;
   for (let i = datapoints.length - 1; i > 0; i--) {
     const positionDelta = Math.abs(datapoints[i].position - datapoints[i - 1].position);
     if (positionDelta > positionThreshold) {
-      lastValidIndex = i;
+      lastValidPosIndex = i;
       break;
     }
   }
 
   // Check if we have frozen position data
-  const hasCorruptedData = lastValidIndex < datapoints.length - 1;
+  const hasCorruptedPosition = lastValidPosIndex < datapoints.length - 1;
 
-  if (hasCorruptedData) {
-    const numCorrupted = datapoints.length - lastValidIndex - 1;
-    const lastValidPosition = datapoints[lastValidIndex].position;
+  if (hasCorruptedPosition) {
+    const numCorrupted = datapoints.length - lastValidPosIndex - 1;
+    const lastValidPosition = datapoints[lastValidPosIndex].position;
     console.warn(`TC file has corrupted position data: ${numCorrupted} points with frozen position at ${(lastValidPosition * 100).toFixed(2)}%`);
-    console.warn(`Reconstructing full lap position from speed data...`);
+    console.warn(`Reconstructing full lap position from speed data (even if speed is also frozen)...`);
 
     // Calculate cumulative distance traveled for ALL points using speed
-    // Estimate time interval between points
+    // Even if speed is frozen, we still use it to estimate distance over time
     const lapTimeSec = lapTimeMs / 1000;
     const avgTimeInterval = lapTimeSec / datapoints.length; // seconds per datapoint
 
@@ -210,6 +211,7 @@ function reconstructPositionFromSpeed(datapoints: TCDataPoint[], lapTimeMs: numb
         point.position = point.position / totalDistance;
       });
       console.warn(`Successfully reconstructed position for ${datapoints.length} points (0-100%)`);
+      console.warn(`Note: Corrupted sections will show as flat lines in the telemetry charts`);
     }
 
     return reconstructedPoints;
@@ -231,7 +233,7 @@ export function convertTCToTelemetry(tcData: TCData, trackLengthKm?: number): Te
   // First, sort by position to ensure data is in order (should already be sorted, but just to be safe)
   let sortedDatapoints = [...tcData.datapoints].sort((a, b) => a.position - b.position);
 
-  // Detect and fix corrupted position data by reconstructing from speed
+  // Detect and reconstruct position from speed when position sensor is corrupted
   sortedDatapoints = reconstructPositionFromSpeed(sortedDatapoints, tcData.header.lapTimeMs);
 
   let cumulativeTime = 0;
